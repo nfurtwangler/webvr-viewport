@@ -7,6 +7,9 @@
     "no-underscore-dangle": "off",
     "class-methods-use-this": "off",
     "no-console": "off",
+    "dot-notation": "off",
+    "max-len": "off",
+    "no-bitwise": "off",
   },
   "env": {
     "browser": true

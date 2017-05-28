@@ -49,11 +49,7 @@ module.exports = [
         {
           test: /\.css$/,
           loaders: ['style-loader', 'css-loader'],
-        },
-        {
-          test: /\.jpg$/,
-          loaders: ['file-loader'],
-        },
+        }
       ],
     },
   },
@@ -85,7 +81,7 @@ module.exports = [
           loaders: ['style-loader', 'css-loader'],
         },
         {
-          test: /\.jpg$/,
+          test: /\.png$/,
           loaders: ['file-loader'],
         },
       ],
