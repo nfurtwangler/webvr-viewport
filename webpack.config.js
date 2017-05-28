@@ -4,8 +4,8 @@ module.exports = [
   {
     entry: './src/webvr-viewport/webvr-viewport.js',
     output: {
-      path: './bin/webvr-viewport/',
-      publicPath: '/bin/webvr-viewport/',
+      path: __dirname  + '/bin/webvr-viewport/',
+      publicPath: '/webvr-viewport/',
       filename: 'webvr-viewport.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
@@ -16,7 +16,7 @@ module.exports = [
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          loaders: ['babel', 'eslint'],
+          loaders: ['babel-loader', 'eslint-loader'],
         }
       ],
     },
@@ -24,42 +24,15 @@ module.exports = [
   {
     entry: './src/samples/samples.js',
     output: {
-      path: './bin/samples/',
-      publicPath: '/bin/samples/',
+      path: __dirname  + '/bin/samples/',
+      publicPath: '/samples/',
       filename: 'samples.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
-    devtool: 'source-map',
-    module: {
-      loaders: [
-        {
-          test: /\.js$/,
-          exclude: /node_modules/,
-          loaders: ['babel', 'eslint'],
-        },
-        {
-          test: /\.css$/,
-          loaders: ['style', 'css'],
-        },
-        {
-          test: /\.jpg$/,
-          loaders: ['file'],
-        },
-      ],
-    },
-  },
-  {
-    entry: './src/samples/hello-world/hello-world.js',
-    output: {
-      path: './bin/samples/hello-world/',
-      publicPath: '/bin/samples/hello-world/',
-      filename: 'hello-world.js',
-      sourceMapFilename: '[file].map',
-      devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
-    },
     plugins: [new HtmlWebpackPlugin({
-      title: 'Hello webvr-viewport',
+      template: './src/samples/samples.template.ejs',
+      inject: 'head'
     })],
     devtool: 'source-map',
     module: {
@@ -67,15 +40,47 @@ module.exports = [
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          loaders: ['babel', 'eslint'],
+          loaders: ['babel-loader', 'eslint-loader'],
         },
         {
           test: /\.css$/,
-          loaders: ['style', 'css'],
+          loaders: ['style-loader', 'css-loader'],
         },
         {
           test: /\.jpg$/,
-          loaders: ['file'],
+          loaders: ['file-loader'],
+        },
+      ],
+    },
+  },
+  {
+    entry: './src/samples/hello-world/hello-world.js',
+    output: {
+      path: __dirname + '/bin/samples/hello-world/',
+      publicPath: '/samples/hello-world',
+      filename: 'hello-world.js',
+      sourceMapFilename: '[file].map',
+      devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+    },
+    plugins: [new HtmlWebpackPlugin({
+      template: './src/samples/hello-world/hello-world.template.ejs',
+      inject: 'head'
+    })],
+    devtool: 'source-map',
+    module: {
+      loaders: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loaders: ['babel-loader', 'eslint-loader'],
+        },
+        {
+          test: /\.css$/,
+          loaders: ['style-loader', 'css-loader'],
+        },
+        {
+          test: /\.jpg$/,
+          loaders: ['file-loader'],
         },
       ],
     },
