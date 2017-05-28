@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "build": "webpack --progress --colors",
-    "start": "webpack-dev-server --inline --hot --progress --colors --open",
+    "startdev": "webpack-dev-server --inline --hot --progress --colors --open",
+    "start": "http-server -p 8000 -c-1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

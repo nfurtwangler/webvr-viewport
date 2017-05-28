@@ -5,12 +5,15 @@ module.exports = [
     entry: './src/webvr-viewport/webvr-viewport.js',
     output: {
       path: __dirname  + '/bin/webvr-viewport/',
-      publicPath: '/webvr-viewport/',
+      publicPath: '/bin/webvr-viewport/',
       filename: 'webvr-viewport.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
     devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
     module: {
       loaders: [
         {
@@ -25,7 +28,7 @@ module.exports = [
     entry: './src/samples/samples.js',
     output: {
       path: __dirname  + '/bin/samples/',
-      publicPath: '/samples/',
+      publicPath: '/bin/samples/',
       filename: 'samples.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
@@ -35,6 +38,9 @@ module.exports = [
       inject: 'head'
     })],
     devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
     module: {
       loaders: [
         {
@@ -57,7 +63,7 @@ module.exports = [
     entry: './src/samples/hello-world/hello-world.js',
     output: {
       path: __dirname + '/bin/samples/hello-world/',
-      publicPath: '/samples/hello-world',
+      publicPath: '/bin/samples/hello-world/',
       filename: 'hello-world.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
@@ -67,6 +73,9 @@ module.exports = [
       inject: 'head'
     })],
     devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
     module: {
       loaders: [
         {
