@@ -2352,16 +2352,16 @@ var _glMatrix = __webpack_require__(1);
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var CameraControllerMouse = function () {
-  function CameraControllerMouse(viewMatrix, width, height) {
+  function CameraControllerMouse(viewMatrix) {
     _classCallCheck(this, CameraControllerMouse);
 
     this._viewMatrix = viewMatrix;
-    this._width = width;
-    this._height = height;
+    this._yUnit = _glMatrix.vec3.fromValues(0, 1, 0);
+    this._width = 0;
+    this._height = 0;
+    this._fov = 0;
     this._yaw = 0;
     this._pitch = 0;
-    this._lastYaw = 0;
-    this._lastPitch = 0;
     this._dragging = false;
     this._lastX = 0;
     this._lastY = 0;
@@ -2388,11 +2388,16 @@ var CameraControllerMouse = function () {
   }, {
     key: 'update',
     value: function update() {
-      _glMatrix.mat4.rotateY(this._viewMatrix, this._viewMatrix, this._yaw - this._lastYaw);
-      _glMatrix.mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch - this._lastPitch);
-
-      this._lastYaw = this._yaw;
-      this._lastPitch = this._pitch;
+      _glMatrix.mat4.fromRotation(this._viewMatrix, this._yaw, this._yUnit);
+      _glMatrix.mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch);
+    }
+  }, {
+    key: 'resize',
+    value: function resize(width, height, fov, aspect) {
+      this._width = width;
+      this._height = height;
+      this._fov = fov;
+      this._aspect = aspect;
     }
   }, {
     key: '_onMouseDown',
@@ -2415,10 +2420,8 @@ var CameraControllerMouse = function () {
 
       var deltaX = e.screenX - this._lastX;
       var deltaY = e.screenY - this._lastY;
-      var fov = 60; // TODO pass this in
-      var aspect = 1;
-      this._yaw += -deltaX / (this._width * fov * aspect * (Math.PI / 180));
-      this._pitch += -deltaY / (this._height * fov * (Math.PI / 180));
+      this._yaw += -(deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
+      this._pitch += -deltaY / (this._height * this._fov * (Math.PI / 180));
       this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
 
       this._lastX = e.screenX;
@@ -2508,6 +2511,11 @@ var CameraControllerOrientation = function () {
       _glMatrix.mat4.fromQuat(this._viewMatrix, this._viewQuat);
     }
   }, {
+    key: 'resize',
+    value: function resize() {
+      // Nothing to do
+    }
+  }, {
     key: '_onOrientationChange',
     value: function _onOrientationChange() {
       this._screenOrientation = this._getScreenOrientation();
@@ -2567,26 +2575,54 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var WebVRViewport = function () {
-  function WebVRViewport(width, height) {
+  function WebVRViewport(options) {
     _classCallCheck(this, WebVRViewport);
 
     this._canvasElement = document.createElement('canvas');
-    this._canvasElement.width = width;
-    this._canvasElement.height = height;
     this._eventListeners = {};
-    this._boundOnAnimationFrame = this._onAnimationFrame.bind(this);
-    this._isPresenting = false;
+    this._animationFrameHandler = this._onAnimationFrame.bind(this);
 
-    // mono fallback
-    this._monoFOV = 60 * Math.PI / 180;
-    this._monoNear = 0.01;
-    this._monoFar = 10000;
     this._projectionMatrix = _glMatrix.mat4.create();
-    _glMatrix.mat4.perspective(this._projectionMatrix, 1, this._monoFOV, this._monoNear, this._monoFar);
-
     this._viewMatrix = _glMatrix.mat4.create();
-    this._monoCameraController = this._isDeviceOrientationSupported() ? new _cameraControllerOrientation2.default(this._viewMatrix) : new _cameraControllerMouse2.default(this._viewMatrix, width, height);
+    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._viewMatrix) : new _cameraControllerMouse2.default(this._viewMatrix);
     this._monoCameraController.connect(this._canvasElement);
+
+    this._parentElement = options.parentElement || document.body;
+    this._parentElement.appendChild(this._canvasElement);
+
+    var width = options.width;
+    var height = options.height;
+    var pixelRatio = options.pixelRatio;
+    var fixedSize = true;
+    if (!width) {
+      if (this._parentElement === document.body) {
+        fixedSize = false;
+        width = window.innerWidth;
+      } else {
+        width = this._parentElement.clientWidth;
+      }
+    }
+    if (!height) {
+      if (this._parentElement === document.body) {
+        fixedSize = false;
+        height = window.innerHeight;
+      } else {
+        height = this._parentElement.clientHeight;
+      }
+    }
+    if (!pixelRatio) {
+      this._fixedPixelRatio = false;
+      pixelRatio = window.devicePixelRatio || 1;
+    } else {
+      this._fixedPixelRatio = true;
+    }
+
+    this._pixelRatio = pixelRatio;
+    this.resize(width, height);
+
+    if (!fixedSize && this._parentElement === document.body) {
+      this._addResizeHandler();
+    }
 
     this._initVrDisplay();
   }
@@ -2613,8 +2649,6 @@ var WebVRViewport = function () {
   }, {
     key: 'enterVR',
     value: function enterVR() {
-      var _this = this;
-
       if (this._vrDisplay) {
         // We must adjust the canvas (our VRLayer source) to match the VRDisplay
         var leftEye = this._vrDisplay.getEyeParameters('left');
@@ -2627,12 +2661,74 @@ var WebVRViewport = function () {
 
         this._vrDisplay.requestPresent([{ source: this._canvasElement }]).then(function () {
           // TODO: emit event
-          _this._isPresenting = true;
+          console.log('webvr-viewport enterVR - Finished');
         }).catch(function (err) {
           // TODO: emit event
           console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
         });
       }
+    }
+  }, {
+    key: 'resize',
+    value: function resize(width, height) {
+      if (!this._fixedPixelRatio) {
+        this._pixelRatio = window.devicePixelRatio || 1;
+      }
+      this._canvasElement.width = width * this._pixelRatio;
+      this._canvasElement.height = height * this._pixelRatio;
+
+      var fov = void 0;
+      if (this._isMobileInLandscapeOrientation) {
+        // clamp the range of fov
+        fov = Math.max(30, Math.min(70, 60 / (width / height)));
+      } else {
+        fov = 60;
+      }
+
+      var aspect = width / height;
+
+      _glMatrix.mat4.perspective(this._projectionMatrix, fov * Math.PI / 180, aspect, 0.01, 10000.0);
+
+      this._monoCameraController.resize(width, height, fov, aspect);
+    }
+  }, {
+    key: '_addResizeHandler',
+    value: function _addResizeHandler() {
+      var _this = this;
+
+      var last = 0;
+      var timer = null;
+      var delay = 100;
+
+      // Throttled window resize handler
+      this._resizeHandler = function () {
+        if (_this._vrDisplay && _this._vrDisplay.isPresenting) {
+          return;
+        }
+
+        var now = Date.now();
+
+        if (!last) {
+          last = now;
+        }
+
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        if (now > last + delay) {
+          last = now;
+          _this.resize(window.innerWidth, window.innerHeight);
+          return;
+        }
+
+        timer = setTimeout(function () {
+          last = now;
+          _this.resize(window.innerWidth, window.innerHeight);
+        }, delay);
+      };
+
+      window.addEventListener('resize', this._resizeHandler);
     }
   }, {
     key: '_initVrDisplay',
@@ -2663,9 +2759,9 @@ var WebVRViewport = function () {
     key: '_requestAnimationFrame',
     value: function _requestAnimationFrame() {
       if (this._vrDisplay) {
-        this._vrDisplay.requestAnimationFrame(this._boundOnAnimationFrame);
+        this._vrDisplay.requestAnimationFrame(this._animationFrameHandler);
       } else {
-        window.requestAnimationFrame(this._boundOnAnimationFrame);
+        window.requestAnimationFrame(this._animationFrameHandler);
       }
     }
   }, {
@@ -2673,7 +2769,7 @@ var WebVRViewport = function () {
     value: function _onAnimationFrame(timestamp) {
       this._requestAnimationFrame();
 
-      if (this._isPresenting && this._vrDisplay) {
+      if (this._vrDisplay && this._vrDisplay.isPresenting) {
         this._vrDisplay.getFrameData(this._frameData);
       } else {
         this._monoCameraController.update();
@@ -2704,14 +2800,9 @@ var WebVRViewport = function () {
         }
       }
 
-      if (this._isPresenting && this._vrDisplay) {
+      if (this._vrDisplay && this._vrDisplay.isPresenting) {
         this._vrDisplay.submitFrame();
       }
-    }
-  }, {
-    key: '_isDeviceOrientationSupported',
-    value: function _isDeviceOrientationSupported() {
-      return 'DeviceOrientationEvent' in window && /Mobi/i.test(navigator.userAgent) && !/OculusBrowser/i.test(navigator.userAgent);
     }
   }, {
     key: 'canvasElement',
@@ -2721,27 +2812,70 @@ var WebVRViewport = function () {
   }, {
     key: 'isPresenting',
     get: function get() {
-      return this._isPresenting;
+      return this._vrDisplay && this._vrDisplay.isPresenting;
     }
   }, {
     key: 'leftProjectionMatrix',
     get: function get() {
-      return this._isPresenting ? this._frameData.leftProjectionMatrix : this._projectionMatrix;
+      return this.isPresenting ? this._frameData.leftProjectionMatrix : this._projectionMatrix;
     }
   }, {
     key: 'rightProjectionMatrix',
     get: function get() {
-      return this._isPresenting ? this._frameData.rightProjectionMatrix : this._projectionMatrix;
+      return this.isPresenting ? this._frameData.rightProjectionMatrix : this._projectionMatrix;
     }
   }, {
     key: 'leftViewMatrix',
     get: function get() {
-      return this._isPresenting ? this._frameData.leftViewMatrix : this._viewMatrix;
+      return this.isPresenting ? this._frameData.leftViewMatrix : this._viewMatrix;
     }
   }, {
     key: 'rightViewMatrix',
     get: function get() {
-      return this._isPresenting ? this._frameData.rightViewMatrix : this._viewMatrix;
+      return this.isPresenting ? this._frameData.rightViewMatrix : this._viewMatrix;
+    }
+  }, {
+    key: '_isMobile',
+    get: function get() {
+      return (/Mobi/i.test(navigator.userAgent)
+      );
+    }
+  }, {
+    key: '_isDeviceOrientationSupported',
+    get: function get() {
+      return 'DeviceOrientationEvent' in window && this._isMobile && !/OculusBrowser/i.test(navigator.userAgent);
+    }
+  }, {
+    key: '_isMobileInLandscapeOrientation',
+    get: function get() {
+      if (!this._isMobile) {
+        return false;
+      }
+
+      var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
+      if (orientation) {
+        if (orientation.type === 'landscape-primary' || orientation.type === 'landscape-secondary') {
+          return true;
+        } else if (orientation.type === 'portrait-secondary' || orientation.type === 'portrait-primary') {
+          return false;
+        }
+      }
+
+      // fall back to window.orientation
+      if (!window.orientation) {
+        return false;
+      }
+
+      var quadrant = Math.round(window.orientation / 90);
+      while (quadrant < 0) {
+        quadrant += 4;
+      }
+
+      while (quadrant >= 4) {
+        quadrant -= 4;
+      }
+
+      return quadrant === 1 || quadrant === 3;
     }
   }]);
 

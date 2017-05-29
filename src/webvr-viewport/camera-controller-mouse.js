@@ -1,14 +1,14 @@
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 
 class CameraControllerMouse {
-  constructor(viewMatrix, width, height) {
+  constructor(viewMatrix) {
     this._viewMatrix = viewMatrix;
-    this._width = width;
-    this._height = height;
+    this._yUnit = vec3.fromValues(0, 1, 0);
+    this._width = 0;
+    this._height = 0;
+    this._fov = 0;
     this._yaw = 0;
     this._pitch = 0;
-    this._lastYaw = 0;
-    this._lastPitch = 0;
     this._dragging = false;
     this._lastX = 0;
     this._lastY = 0;
@@ -31,11 +31,15 @@ class CameraControllerMouse {
   }
 
   update() {
-    mat4.rotateY(this._viewMatrix, this._viewMatrix, this._yaw - this._lastYaw);
-    mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch - this._lastPitch);
+    mat4.fromRotation(this._viewMatrix, this._yaw, this._yUnit);
+    mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch);
+  }
 
-    this._lastYaw = this._yaw;
-    this._lastPitch = this._pitch;
+  resize(width, height, fov, aspect) {
+    this._width = width;
+    this._height = height;
+    this._fov = fov;
+    this._aspect = aspect;
   }
 
   _onMouseDown(e) {
@@ -55,10 +59,8 @@ class CameraControllerMouse {
 
     const deltaX = e.screenX - this._lastX;
     const deltaY = e.screenY - this._lastY;
-    const fov = 60; // TODO pass this in
-    const aspect = 1;
-    this._yaw += -deltaX / (this._width * fov * aspect * (Math.PI / 180));
-    this._pitch += -deltaY / (this._height * fov * (Math.PI / 180));
+    this._yaw += -(deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
+    this._pitch += -deltaY / (this._height * this._fov * (Math.PI / 180));
     this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
 
     this._lastX = e.screenX;

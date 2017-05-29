@@ -54,6 +54,10 @@ class CameraControllerOrientation {
     mat4.fromQuat(this._viewMatrix, this._viewQuat);
   }
 
+  resize() {
+    // Nothing to do
+  }
+
   _onOrientationChange() {
     this._screenOrientation = this._getScreenOrientation();
   }

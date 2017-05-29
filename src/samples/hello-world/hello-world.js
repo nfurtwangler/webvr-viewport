@@ -4,7 +4,7 @@ import cubeImageUrl from './assets/cube-sea.png';
 
 import './hello-world.css';
 
-const viewport = new WebVRViewport(1024, 1024);
+let viewport;       // The WebVRViewport used to manage the view and projection matrices
 let gl;             // The webgl context of the canvas element, used to render the scene
 let quadProgram;    // The WebGLProgram we will create, a simple quad rendering program
 let attribs;        // A map of shader attributes to their location in the program
@@ -14,6 +14,10 @@ let texture;        // The texture that will be bound to the diffuse sampler
 let quadModelMat;   // The quad's model matrix which we will animate
 
 const initScene = (loadedCallback) => {
+  viewport = new WebVRViewport({
+    // Default options
+  });
+
   const layerSource = viewport.canvasElement;
 
   const glAttribs = {
