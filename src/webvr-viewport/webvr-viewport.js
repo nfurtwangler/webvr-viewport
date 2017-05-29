@@ -1,3 +1,7 @@
+import { mat4 } from 'gl-matrix';
+import CameraControllerMouse from './camera-controller-mouse';
+import CameraControllerOrientation from './camera-controller-orientation';
+
 class WebVRViewport {
   constructor(width, height) {
     this._canvasElement = document.createElement('canvas');
@@ -7,19 +11,18 @@ class WebVRViewport {
     this._boundOnAnimationFrame = this._onAnimationFrame.bind(this);
     this._isPresenting = false;
 
-    this._projectionMatrix = new Float32Array([
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
+    // mono fallback
+    this._monoFOV = (60 * Math.PI) / 180;
+    this._monoNear = 0.01;
+    this._monoFar = 10000;
+    this._projectionMatrix = mat4.create();
+    mat4.perspective(this._projectionMatrix, 1, this._monoFOV, this._monoNear, this._monoFar);
 
-    this._viewMatrix = new Float32Array([
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-    ]);
+    this._viewMatrix = mat4.create();
+    this._monoCameraController = this._isDeviceOrientationSupported() ?
+                                 new CameraControllerOrientation(this._viewMatrix) :
+                                 new CameraControllerMouse(this._viewMatrix, width, height);
+    this._monoCameraController.connect(this._canvasElement);
 
     this._initVrDisplay();
   }
@@ -120,6 +123,8 @@ class WebVRViewport {
 
     if (this._isPresenting && this._vrDisplay) {
       this._vrDisplay.getFrameData(this._frameData);
+    } else {
+      this._monoCameraController.update();
     }
 
     for (const callback of this._eventListeners['frame']) {
@@ -129,6 +134,14 @@ class WebVRViewport {
     if (this._isPresenting && this._vrDisplay) {
       this._vrDisplay.submitFrame();
     }
+  }
+
+  _isDeviceOrientationSupported() {
+    return (
+      'DeviceOrientationEvent' in window &&
+      /Mobi/i.test(navigator.userAgent) &&
+      !/OculusBrowser/i.test(navigator.userAgent)
+    );
   }
 }
 
