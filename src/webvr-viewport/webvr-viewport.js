@@ -1,4 +1,4 @@
-import { mat4 } from 'gl-matrix';
+import { mat4, quat } from 'gl-matrix';
 import CameraControllerMouse from './camera-controller-mouse';
 import CameraControllerOrientation from './camera-controller-orientation';
 
@@ -9,10 +9,12 @@ class WebVRViewport {
     this._animationFrameHandler = this._onAnimationFrame.bind(this);
 
     this._projectionMatrix = mat4.create();
+    this._cameraMatrix = mat4.create();
     this._viewMatrix = mat4.create();
+    this._rotationQuat = quat.create();
     this._monoCameraController = this._isDeviceOrientationSupported ?
-                                 new CameraControllerOrientation(this._viewMatrix) :
-                                 new CameraControllerMouse(this._viewMatrix);
+                                 new CameraControllerOrientation(this._cameraMatrix) :
+                                 new CameraControllerMouse(this._cameraMatrix);
     this._monoCameraController.connect(this._canvasElement);
 
     this._parentElement = options.parentElement || document.body;
@@ -61,6 +63,10 @@ class WebVRViewport {
 
   get isPresenting() {
     return this._vrDisplay && this._vrDisplay.isPresenting;
+  }
+
+  get quaternion() {
+    return this._rotationQuat;
   }
 
   get leftProjectionMatrix() {
@@ -138,6 +144,12 @@ class WebVRViewport {
     mat4.perspective(this._projectionMatrix, (fov * Math.PI) / 180, aspect, 0.01, 10000.0);
 
     this._monoCameraController.resize(width, height, fov, aspect);
+
+    if (this._eventListeners['resize']) {
+      for (const callback of this._eventListeners['resize']) {
+        callback(width, height, fov, aspect);
+      }
+    }
   }
 
   _addResizeHandler() {
@@ -210,7 +222,10 @@ class WebVRViewport {
     if (this._vrDisplay && this._vrDisplay.isPresenting) {
       this._vrDisplay.getFrameData(this._frameData);
     } else {
+      // Update the mono camera and save the rotation quaternion
       this._monoCameraController.update();
+      mat4.invert(this._viewMatrix, this._cameraMatrix);
+      mat4.getRotation(this._rotationQuat, this._cameraMatrix);
     }
 
     for (const callback of this._eventListeners['frame']) {

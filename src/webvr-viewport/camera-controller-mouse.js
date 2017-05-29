@@ -59,8 +59,8 @@ class CameraControllerMouse {
 
     const deltaX = e.screenX - this._lastX;
     const deltaY = e.screenY - this._lastY;
-    this._yaw += -(deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
-    this._pitch += -deltaY / (this._height * this._fov * (Math.PI / 180));
+    this._yaw += (deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
+    this._pitch += deltaY / (this._height * this._fov * (Math.PI / 180));
     this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
 
     this._lastX = e.screenX;

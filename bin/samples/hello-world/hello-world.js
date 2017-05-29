@@ -2370,8 +2370,10 @@ var WebVRViewport = function () {
     this._animationFrameHandler = this._onAnimationFrame.bind(this);
 
     this._projectionMatrix = _glMatrix.mat4.create();
+    this._cameraMatrix = _glMatrix.mat4.create();
     this._viewMatrix = _glMatrix.mat4.create();
-    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._viewMatrix) : new _cameraControllerMouse2.default(this._viewMatrix);
+    this._rotationQuat = _glMatrix.quat.create();
+    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._cameraMatrix) : new _cameraControllerMouse2.default(this._cameraMatrix);
     this._monoCameraController.connect(this._canvasElement);
 
     this._parentElement = options.parentElement || document.body;
@@ -2477,6 +2479,33 @@ var WebVRViewport = function () {
       _glMatrix.mat4.perspective(this._projectionMatrix, fov * Math.PI / 180, aspect, 0.01, 10000.0);
 
       this._monoCameraController.resize(width, height, fov, aspect);
+
+      if (this._eventListeners['resize']) {
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = this._eventListeners['resize'][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var callback = _step.value;
+
+            callback(width, height, fov, aspect);
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
+      }
     }
   }, {
     key: '_addResizeHandler',
@@ -2559,30 +2588,33 @@ var WebVRViewport = function () {
       if (this._vrDisplay && this._vrDisplay.isPresenting) {
         this._vrDisplay.getFrameData(this._frameData);
       } else {
+        // Update the mono camera and save the rotation quaternion
         this._monoCameraController.update();
+        _glMatrix.mat4.invert(this._viewMatrix, this._cameraMatrix);
+        _glMatrix.mat4.getRotation(this._rotationQuat, this._cameraMatrix);
       }
 
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
 
       try {
-        for (var _iterator = this._eventListeners['frame'][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var callback = _step.value;
+        for (var _iterator2 = this._eventListeners['frame'][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var callback = _step2.value;
 
           callback(timestamp);
         }
       } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
           }
         } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
+          if (_didIteratorError2) {
+            throw _iteratorError2;
           }
         }
       }
@@ -2600,6 +2632,11 @@ var WebVRViewport = function () {
     key: 'isPresenting',
     get: function get() {
       return this._vrDisplay && this._vrDisplay.isPresenting;
+    }
+  }, {
+    key: 'quaternion',
+    get: function get() {
+      return this._rotationQuat;
     }
   }, {
     key: 'leftProjectionMatrix',
@@ -2972,8 +3009,8 @@ var CameraControllerMouse = function () {
 
       var deltaX = e.screenX - this._lastX;
       var deltaY = e.screenY - this._lastY;
-      this._yaw += -(deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
-      this._pitch += -deltaY / (this._height * this._fov * (Math.PI / 180));
+      this._yaw += deltaX / this._width * this._fov * this._aspect * (Math.PI / 180);
+      this._pitch += deltaY / (this._height * this._fov * (Math.PI / 180));
       this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
 
       this._lastX = e.screenX;
@@ -3004,12 +3041,12 @@ var _glMatrix = __webpack_require__(1);
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var CameraControllerOrientation = function () {
-  function CameraControllerOrientation(viewMatrix) {
+  function CameraControllerOrientation(cameraMatrix) {
     _classCallCheck(this, CameraControllerOrientation);
 
-    this._viewMatrix = viewMatrix;
-    this._viewQuat = _glMatrix.quat.create();
-    this._rotationQuat = _glMatrix.quat.create();
+    this._cameraMatrix = cameraMatrix;
+    this._cameraRotationQuat = _glMatrix.quat.create();
+    this._initialRotationQuat = _glMatrix.quat.create();
 
     // -Pi/2 rotation around the X-axis
     this._screenQuat = _glMatrix.quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
@@ -3045,22 +3082,21 @@ var CameraControllerOrientation = function () {
 
       var orient = this._screenOrientation;
 
-      _glMatrix.quat.identity(this._viewQuat);
-      _glMatrix.quat.rotateY(this._viewQuat, this._viewQuat, alpha);
-      _glMatrix.quat.rotateX(this._viewQuat, this._viewQuat, beta);
-      _glMatrix.quat.rotateZ(this._viewQuat, this._viewQuat, -gamma);
+      _glMatrix.quat.identity(this._cameraRotationQuat);
+      _glMatrix.quat.rotateY(this._cameraRotationQuat, this._cameraRotationQuat, alpha);
+      _glMatrix.quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
+      _glMatrix.quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
 
       if (this._initialAlpha !== null) {
-        _glMatrix.quat.setAxisAngle(this._rotationQuat, this._yUnit, -this._initialAlpha);
-        _glMatrix.quat.multiply(this._viewQuat, this._rotationQuat, this._viewQuat);
+        _glMatrix.quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
+        _glMatrix.quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
       }
 
-      _glMatrix.quat.multiply(this._viewQuat, this._viewQuat, this._screenQuat);
-      _glMatrix.quat.setAxisAngle(this._rotationQuat, this._zUnit, -orient);
+      _glMatrix.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._screenQuat);
+      _glMatrix.quat.setAxisAngle(this._initialRotationQuat, this._zUnit, -orient);
 
-      _glMatrix.quat.multiply(this._viewQuat, this._viewQuat, this._rotationQuat); // Account for system-level screen rotation
-      _glMatrix.quat.invert(this._viewQuat, this._viewQuat);
-      _glMatrix.mat4.fromQuat(this._viewMatrix, this._viewQuat);
+      _glMatrix.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._initialRotationQuat);
+      _glMatrix.mat4.fromQuat(this._cameraMatrix, this._cameraRotationQuat);
     }
   }, {
     key: 'resize',

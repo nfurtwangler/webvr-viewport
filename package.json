@@ -39,6 +39,7 @@
     "webpack-dev-server": "^2.4.5"
   },
   "dependencies": {
-    "gl-matrix": "^2.3.2"
+    "gl-matrix": "^2.3.2",
+    "three": "^0.85.2"
   }
 }

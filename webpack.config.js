@@ -87,4 +87,38 @@ module.exports = [
       ],
     },
   },
+  {
+    entry: './src/samples/hello-three/hello-three.js',
+    output: {
+      path: __dirname + '/bin/samples/hello-three/',
+      filename: 'hello-three.js',
+      sourceMapFilename: '[file].map',
+      devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+    },
+    plugins: [new HtmlWebpackPlugin({
+      template: './src/samples/hello-three/hello-three.template.ejs',
+      inject: 'head'
+    })],
+    devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
+    module: {
+      loaders: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loaders: ['babel-loader', 'eslint-loader'],
+        },
+        {
+          test: /\.css$/,
+          loaders: ['style-loader', 'css-loader'],
+        },
+        {
+          test: /\.png$/,
+          loaders: ['file-loader'],
+        },
+      ],
+    },
+  },
 ];

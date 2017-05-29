@@ -1,10 +1,10 @@
 import { glMatrix, mat4, quat, vec3 } from 'gl-matrix';
 
 class CameraControllerOrientation {
-  constructor(viewMatrix) {
-    this._viewMatrix = viewMatrix;
-    this._viewQuat = quat.create();
-    this._rotationQuat = quat.create();
+  constructor(cameraMatrix) {
+    this._cameraMatrix = cameraMatrix;
+    this._cameraRotationQuat = quat.create();
+    this._initialRotationQuat = quat.create();
 
     // -Pi/2 rotation around the X-axis
     this._screenQuat = quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
@@ -36,22 +36,21 @@ class CameraControllerOrientation {
 
     const orient = this._screenOrientation;
 
-    quat.identity(this._viewQuat);
-    quat.rotateY(this._viewQuat, this._viewQuat, alpha);
-    quat.rotateX(this._viewQuat, this._viewQuat, beta);
-    quat.rotateZ(this._viewQuat, this._viewQuat, -gamma);
+    quat.identity(this._cameraRotationQuat);
+    quat.rotateY(this._cameraRotationQuat, this._cameraRotationQuat, alpha);
+    quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
+    quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
 
     if (this._initialAlpha !== null) {
-      quat.setAxisAngle(this._rotationQuat, this._yUnit, -this._initialAlpha);
-      quat.multiply(this._viewQuat, this._rotationQuat, this._viewQuat);
+      quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
+      quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
     }
 
-    quat.multiply(this._viewQuat, this._viewQuat, this._screenQuat);
-    quat.setAxisAngle(this._rotationQuat, this._zUnit, -orient);
+    quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._screenQuat);
+    quat.setAxisAngle(this._initialRotationQuat, this._zUnit, -orient);
 
-    quat.multiply(this._viewQuat, this._viewQuat, this._rotationQuat); // Account for system-level screen rotation
-    quat.invert(this._viewQuat, this._viewQuat);
-    mat4.fromQuat(this._viewMatrix, this._viewQuat);
+    quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._initialRotationQuat);
+    mat4.fromQuat(this._cameraMatrix, this._cameraRotationQuat);
   }
 
   resize() {
