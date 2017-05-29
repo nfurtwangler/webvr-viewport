@@ -2481,6 +2481,14 @@ var WebVRViewport = function () {
       this._monoCameraController.resize(width, height, fov, aspect);
 
       if (this._eventListeners['resize']) {
+        var resizeParams = {
+          width: width,
+          height: height,
+          fov: fov,
+          aspect: aspect,
+          pixelRatio: this._pixelRatio
+        };
+
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
         var _iteratorError = undefined;
@@ -2489,7 +2497,7 @@ var WebVRViewport = function () {
           for (var _iterator = this._eventListeners['resize'][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var callback = _step.value;
 
-            callback(width, height, fov, aspect);
+            callback(resizeParams);
           }
         } catch (err) {
           _didIteratorError = true;

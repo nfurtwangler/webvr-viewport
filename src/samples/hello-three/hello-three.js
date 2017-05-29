@@ -11,10 +11,11 @@ let camera;
 let renderer;
 let cubeFace;
 
-const resize = (width, height, fov, aspect) => {
-  camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 10000);
+const resize = (params) => {
+  camera = new THREE.PerspectiveCamera(params.fov, params.aspect, 0.1, 10000);
   camera.position.z = 2;
-  renderer.setSize(width, height);
+  renderer.setSize(params.width, params.height);
+  renderer.setPixelRatio(params.pixelRatio);
 };
 
 const initScene = (loadedCallback) => {
@@ -29,7 +30,14 @@ const initScene = (loadedCallback) => {
     canvas: viewport.canvasElement,
   });
   renderer.setClearColor('#000000');
-  resize(window.innerWidth, window.innerHeight, 60, window.innerWidth / window.innerHeight);
+
+  resize({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    fov: 60,
+    aspect: window.innerWidth / window.innerHeight,
+    pixelRatio: window.devicePixelRatio,
+  });
 
   viewport.addEventListener('resize', resize);
 

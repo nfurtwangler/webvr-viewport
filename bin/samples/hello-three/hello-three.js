@@ -2481,6 +2481,14 @@ var WebVRViewport = function () {
       this._monoCameraController.resize(width, height, fov, aspect);
 
       if (this._eventListeners['resize']) {
+        var resizeParams = {
+          width: width,
+          height: height,
+          fov: fov,
+          aspect: aspect,
+          pixelRatio: this._pixelRatio
+        };
+
         var _iteratorNormalCompletion = true;
         var _didIteratorError = false;
         var _iteratorError = undefined;
@@ -2489,7 +2497,7 @@ var WebVRViewport = function () {
           for (var _iterator = this._eventListeners['resize'][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
             var callback = _step.value;
 
-            callback(width, height, fov, aspect);
+            callback(resizeParams);
           }
         } catch (err) {
           _didIteratorError = true;
@@ -46454,10 +46462,11 @@ var camera = void 0;
 var renderer = void 0;
 var cubeFace = void 0;
 
-var resize = function resize(width, height, fov, aspect) {
-  camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 10000);
+var resize = function resize(params) {
+  camera = new THREE.PerspectiveCamera(params.fov, params.aspect, 0.1, 10000);
   camera.position.z = 2;
-  renderer.setSize(width, height);
+  renderer.setSize(params.width, params.height);
+  renderer.setPixelRatio(params.pixelRatio);
 };
 
 var initScene = function initScene(loadedCallback) {
@@ -46472,7 +46481,14 @@ var initScene = function initScene(loadedCallback) {
     canvas: viewport.canvasElement
   });
   renderer.setClearColor('#000000');
-  resize(window.innerWidth, window.innerHeight, 60, window.innerWidth / window.innerHeight);
+
+  resize({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    fov: 60,
+    aspect: window.innerWidth / window.innerHeight,
+    pixelRatio: window.devicePixelRatio
+  });
 
   viewport.addEventListener('resize', resize);
 

@@ -146,8 +146,16 @@ class WebVRViewport {
     this._monoCameraController.resize(width, height, fov, aspect);
 
     if (this._eventListeners['resize']) {
+      const resizeParams = {
+        width,
+        height,
+        fov,
+        aspect,
+        pixelRatio: this._pixelRatio,
+      };
+
       for (const callback of this._eventListeners['resize']) {
-        callback(width, height, fov, aspect);
+        callback(resizeParams);
       }
     }
   }
