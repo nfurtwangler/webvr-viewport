@@ -1,21 +1,18 @@
 import * as THREE from 'three';
 import WebVRViewport from '../../webvr-viewport/webvr-viewport';
-
+import WebVRViewportEffect from '../../webvr-viewport-three/webvr-viewport-effect';
 import cubeImageUrl from './assets/cube-sea.png';
 
 import './hello-three.css';
 
 let viewport;       // The WebVRViewport used to manage the view and projection matrices
+let effect;
 let scene;
-let camera;
 let renderer;
 let cubeFace;
 
 const resize = (params) => {
-  camera = new THREE.PerspectiveCamera(params.fov, params.aspect, 0.1, 10000);
-  camera.position.z = 2;
-  renderer.setSize(params.width, params.height);
-  renderer.setPixelRatio(params.pixelRatio);
+  effect.resize(params);
 };
 
 const initScene = (loadedCallback) => {
@@ -30,7 +27,9 @@ const initScene = (loadedCallback) => {
     canvas: viewport.canvasElement,
   });
   renderer.setClearColor('#000000');
+  effect = new WebVRViewportEffect(renderer);
 
+  // Set initial size and listen for changes
   resize({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -38,17 +37,20 @@ const initScene = (loadedCallback) => {
     aspect: window.innerWidth / window.innerHeight,
     pixelRatio: window.devicePixelRatio,
   });
-
   viewport.addEventListener('resize', resize);
 
+  // Load the texture, and add it to the scene
   const loader = new THREE.TextureLoader();
   loader.load(
     './' + cubeImageUrl,
     (texture) => {
-      const cubeFaceGeo = new THREE.PlaneGeometry(1, 1);
+      const cubeFaceGeo = new THREE.PlaneGeometry(0.4, 0.4);
       const cubeFaceMat = new THREE.MeshBasicMaterial({ map: texture });
       cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
+      cubeFace.position.setZ(-1);
       scene.add(cubeFace);
+
+      // Done loading
       loadedCallback();
     }
   );
@@ -64,19 +66,15 @@ const update = (timestamp) => {
   // Animate the z location of the quad based on the current frame timestamp
   const oscillationSpeed = Math.PI / 2;
   const z = -1 + Math.cos((oscillationSpeed * timestamp) / 1000);
-
-  cubeFace.position.set(0, 0, z);
-
-  const viewportRotation = viewport.quaternion;
-  camera.quaternion.set(viewportRotation[0], viewportRotation[1], viewportRotation[2], viewportRotation[3]);
-  camera.updateMatrixWorld(true);
+  cubeFace.position.set(0, 0, z - 1);
 };
 
 const onAnimationFrame = (timestamp) => {
   // Update the scene once per frame
   update(timestamp);
 
-  renderer.render(scene, camera);
+  // Render using the WebVRViewport effect
+  effect.render(scene, viewport);
 };
 
 document.addEventListener('DOMContentLoaded', () => {

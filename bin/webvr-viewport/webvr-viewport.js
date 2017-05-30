@@ -2581,11 +2581,11 @@ var WebVRViewport = function () {
     this._eventListeners = {};
     this._animationFrameHandler = this._onAnimationFrame.bind(this);
 
-    this._projectionMatrix = _glMatrix.mat4.create();
-    this._cameraMatrix = _glMatrix.mat4.create();
-    this._viewMatrix = _glMatrix.mat4.create();
-    this._rotationQuat = _glMatrix.quat.create();
-    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._cameraMatrix) : new _cameraControllerMouse2.default(this._cameraMatrix);
+    this._monoProjectionMatrix = _glMatrix.mat4.create();
+    this._monoCameraMatrix = _glMatrix.mat4.create();
+    this._monoViewMatrix = _glMatrix.mat4.create();
+    this._monoRotationQuat = _glMatrix.quat.create();
+    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._monoCameraMatrix) : new _cameraControllerMouse2.default(this._monoCameraMatrix);
     this._monoCameraController.connect(this._canvasElement);
 
     this._parentElement = options.parentElement || document.body;
@@ -2626,6 +2626,7 @@ var WebVRViewport = function () {
     }
 
     this._initVrDisplay();
+    this._wasPresenting = this.isPresenting;
   }
 
   _createClass(WebVRViewport, [{
@@ -2651,32 +2652,22 @@ var WebVRViewport = function () {
     key: 'enterVR',
     value: function enterVR() {
       if (this._vrDisplay) {
-        // We must adjust the canvas (our VRLayer source) to match the VRDisplay
-        var leftEye = this._vrDisplay.getEyeParameters('left');
-        var rightEye = this._vrDisplay.getEyeParameters('right');
-
-        // This layer source is a canvas so we will update its width and height based on the eye parameters.
-        // For simplicity we will render each eye at the same resolution
-        this._canvasElement.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
-        this._canvasElement.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-
         this._vrDisplay.requestPresent([{ source: this._canvasElement }]).then(function () {
-          // TODO: emit event
           console.log('webvr-viewport enterVR - Finished');
         }).catch(function (err) {
-          // TODO: emit event
           console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
         });
       }
     }
   }, {
     key: 'resize',
-    value: function resize(width, height) {
+    value: function resize(newWidth, newHeight) {
+      var width = newWidth;
+      var height = newHeight;
       if (!this._fixedPixelRatio) {
         this._pixelRatio = window.devicePixelRatio || 1;
       }
-      this._canvasElement.width = width * this._pixelRatio;
-      this._canvasElement.height = height * this._pixelRatio;
+      var pixelRatio = this._pixelRatio;
 
       var fov = void 0;
       if (this._isMobileInLandscapeOrientation) {
@@ -2688,7 +2679,22 @@ var WebVRViewport = function () {
 
       var aspect = width / height;
 
-      _glMatrix.mat4.perspective(this._projectionMatrix, fov * Math.PI / 180, aspect, 0.01, 10000.0);
+      if (this.isPresenting) {
+        var leftEye = this._vrDisplay.getEyeParameters('left');
+        var rightEye = this._vrDisplay.getEyeParameters('right');
+
+        // For simplicity we will render each eye at the same resolution
+        width = Math.max(leftEye.renderWidth, rightEye.renderWidth);
+        height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+        fov = 60; // Should come from VRDisplay?
+        pixelRatio = 1;
+        aspect = 1;
+      }
+
+      this._canvasElement.width = width * pixelRatio * (this.isPresenting ? 2 : 1);
+      this._canvasElement.height = height * pixelRatio;
+
+      _glMatrix.mat4.perspective(this._monoProjectionMatrix, fov * Math.PI / 180, aspect, 0.01, 10000.0);
 
       this._monoCameraController.resize(width, height, fov, aspect);
 
@@ -2698,7 +2704,7 @@ var WebVRViewport = function () {
           height: height,
           fov: fov,
           aspect: aspect,
-          pixelRatio: this._pixelRatio
+          pixelRatio: pixelRatio
         };
 
         var _iteratorNormalCompletion = true;
@@ -2738,7 +2744,7 @@ var WebVRViewport = function () {
 
       // Throttled window resize handler
       this._resizeHandler = function () {
-        if (_this._vrDisplay && _this._vrDisplay.isPresenting) {
+        if (_this.isPresenting) {
           return;
         }
 
@@ -2805,13 +2811,18 @@ var WebVRViewport = function () {
     value: function _onAnimationFrame(timestamp) {
       this._requestAnimationFrame();
 
-      if (this._vrDisplay && this._vrDisplay.isPresenting) {
+      if (this.isPresenting !== this._wasPresenting) {
+        this._wasPresenting = this.isPresenting;
+        this.resize(this._width, this._height);
+      }
+
+      if (this.isPresenting) {
         this._vrDisplay.getFrameData(this._frameData);
       } else {
         // Update the mono camera and save the rotation quaternion
         this._monoCameraController.update();
-        _glMatrix.mat4.invert(this._viewMatrix, this._cameraMatrix);
-        _glMatrix.mat4.getRotation(this._rotationQuat, this._cameraMatrix);
+        _glMatrix.mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
+        _glMatrix.mat4.getRotation(this._monoRotationQuat, this._monoCameraMatrix);
       }
 
       var _iteratorNormalCompletion2 = true;
@@ -2839,7 +2850,7 @@ var WebVRViewport = function () {
         }
       }
 
-      if (this._vrDisplay && this._vrDisplay.isPresenting) {
+      if (this.isPresenting) {
         this._vrDisplay.submitFrame();
       }
     }
@@ -2851,32 +2862,42 @@ var WebVRViewport = function () {
   }, {
     key: 'isPresenting',
     get: function get() {
-      return this._vrDisplay && this._vrDisplay.isPresenting;
+      return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
     }
   }, {
     key: 'quaternion',
     get: function get() {
-      return this._rotationQuat;
+      return this._monoRotationQuat;
     }
   }, {
     key: 'leftProjectionMatrix',
     get: function get() {
-      return this.isPresenting ? this._frameData.leftProjectionMatrix : this._projectionMatrix;
+      return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
     }
   }, {
     key: 'rightProjectionMatrix',
     get: function get() {
-      return this.isPresenting ? this._frameData.rightProjectionMatrix : this._projectionMatrix;
+      return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
     }
   }, {
     key: 'leftViewMatrix',
     get: function get() {
-      return this.isPresenting ? this._frameData.leftViewMatrix : this._viewMatrix;
+      return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
     }
   }, {
     key: 'rightViewMatrix',
     get: function get() {
-      return this.isPresenting ? this._frameData.rightViewMatrix : this._viewMatrix;
+      return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
+    }
+  }, {
+    key: 'leftEyeOffset',
+    get: function get() {
+      return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : [0, 0, 0];
+    }
+  }, {
+    key: 'rightEyeOffset',
+    get: function get() {
+      return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : [0, 0, 0];
     }
   }, {
     key: '_isMobile',

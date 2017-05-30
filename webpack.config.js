@@ -24,6 +24,28 @@ module.exports = [
     },
   },
   {
+    entry: './src/webvr-viewport-three/webvr-viewport-effect.js',
+    output: {
+      path: __dirname  + '/bin/webvr-viewport-three/',
+      filename: 'webvr-viewport-effect.js',
+      sourceMapFilename: '[file].map',
+      devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+    },
+    devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
+    module: {
+      loaders: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loaders: ['babel-loader', 'eslint-loader'],
+        }
+      ],
+    },
+  },
+  {
     entry: './src/samples/samples.js',
     output: {
       path: __dirname  + '/bin/samples/',

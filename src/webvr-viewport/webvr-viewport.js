@@ -8,13 +8,13 @@ class WebVRViewport {
     this._eventListeners = {};
     this._animationFrameHandler = this._onAnimationFrame.bind(this);
 
-    this._projectionMatrix = mat4.create();
-    this._cameraMatrix = mat4.create();
-    this._viewMatrix = mat4.create();
-    this._rotationQuat = quat.create();
+    this._monoProjectionMatrix = mat4.create();
+    this._monoCameraMatrix = mat4.create();
+    this._monoViewMatrix = mat4.create();
+    this._monoRotationQuat = quat.create();
     this._monoCameraController = this._isDeviceOrientationSupported ?
-                                 new CameraControllerOrientation(this._cameraMatrix) :
-                                 new CameraControllerMouse(this._cameraMatrix);
+                                 new CameraControllerOrientation(this._monoCameraMatrix) :
+                                 new CameraControllerMouse(this._monoCameraMatrix);
     this._monoCameraController.connect(this._canvasElement);
 
     this._parentElement = options.parentElement || document.body;
@@ -55,6 +55,7 @@ class WebVRViewport {
     }
 
     this._initVrDisplay();
+    this._wasPresenting = this.isPresenting;
   }
 
   get canvasElement() {
@@ -62,27 +63,35 @@ class WebVRViewport {
   }
 
   get isPresenting() {
-    return this._vrDisplay && this._vrDisplay.isPresenting;
+    return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
   }
 
   get quaternion() {
-    return this._rotationQuat;
+    return this._monoRotationQuat;
   }
 
   get leftProjectionMatrix() {
-    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._projectionMatrix;
+    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
   }
 
   get rightProjectionMatrix() {
-    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._projectionMatrix;
+    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
   }
 
   get leftViewMatrix() {
-    return this.isPresenting ? this._frameData.leftViewMatrix : this._viewMatrix;
+    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
   }
 
   get rightViewMatrix() {
-    return this.isPresenting ? this._frameData.rightViewMatrix : this._viewMatrix;
+    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
+  }
+
+  get leftEyeOffset() {
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : [0, 0, 0];
+  }
+
+  get rightEyeOffset() {
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : [0, 0, 0];
   }
 
   addEventListener(key, callback) {
@@ -105,31 +114,21 @@ class WebVRViewport {
 
   enterVR() {
     if (this._vrDisplay) {
-      // We must adjust the canvas (our VRLayer source) to match the VRDisplay
-      const leftEye = this._vrDisplay.getEyeParameters('left');
-      const rightEye = this._vrDisplay.getEyeParameters('right');
-
-      // This layer source is a canvas so we will update its width and height based on the eye parameters.
-      // For simplicity we will render each eye at the same resolution
-      this._canvasElement.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
-      this._canvasElement.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-
       this._vrDisplay.requestPresent([{ source: this._canvasElement }]).then(() => {
-        // TODO: emit event
         console.log('webvr-viewport enterVR - Finished');
       }).catch((err) => {
-        // TODO: emit event
         console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
       });
     }
   }
 
-  resize(width, height) {
+  resize(newWidth, newHeight) {
+    let width = newWidth;
+    let height = newHeight;
     if (!this._fixedPixelRatio) {
       this._pixelRatio = window.devicePixelRatio || 1;
     }
-    this._canvasElement.width = width * this._pixelRatio;
-    this._canvasElement.height = height * this._pixelRatio;
+    let pixelRatio = this._pixelRatio;
 
     let fov;
     if (this._isMobileInLandscapeOrientation) {
@@ -139,9 +138,24 @@ class WebVRViewport {
       fov = 60;
     }
 
-    const aspect = width / height;
+    let aspect = width / height;
 
-    mat4.perspective(this._projectionMatrix, (fov * Math.PI) / 180, aspect, 0.01, 10000.0);
+    if (this.isPresenting) {
+      const leftEye = this._vrDisplay.getEyeParameters('left');
+      const rightEye = this._vrDisplay.getEyeParameters('right');
+
+      // For simplicity we will render each eye at the same resolution
+      width = Math.max(leftEye.renderWidth, rightEye.renderWidth);
+      height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+      fov = 60; // Should come from VRDisplay?
+      pixelRatio = 1;
+      aspect = 1;
+    }
+
+    this._canvasElement.width = width * pixelRatio * (this.isPresenting ? 2 : 1);
+    this._canvasElement.height = height * pixelRatio;
+
+    mat4.perspective(this._monoProjectionMatrix, (fov * Math.PI) / 180, aspect, 0.01, 10000.0);
 
     this._monoCameraController.resize(width, height, fov, aspect);
 
@@ -151,7 +165,7 @@ class WebVRViewport {
         height,
         fov,
         aspect,
-        pixelRatio: this._pixelRatio,
+        pixelRatio,
       };
 
       for (const callback of this._eventListeners['resize']) {
@@ -167,7 +181,7 @@ class WebVRViewport {
 
     // Throttled window resize handler
     this._resizeHandler = () => {
-      if (this._vrDisplay && this._vrDisplay.isPresenting) {
+      if (this.isPresenting) {
         return;
       }
 
@@ -227,20 +241,25 @@ class WebVRViewport {
   _onAnimationFrame(timestamp) {
     this._requestAnimationFrame();
 
-    if (this._vrDisplay && this._vrDisplay.isPresenting) {
+    if (this.isPresenting !== this._wasPresenting) {
+      this._wasPresenting = this.isPresenting;
+      this.resize(this._width, this._height);
+    }
+
+    if (this.isPresenting) {
       this._vrDisplay.getFrameData(this._frameData);
     } else {
       // Update the mono camera and save the rotation quaternion
       this._monoCameraController.update();
-      mat4.invert(this._viewMatrix, this._cameraMatrix);
-      mat4.getRotation(this._rotationQuat, this._cameraMatrix);
+      mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
+      mat4.getRotation(this._monoRotationQuat, this._monoCameraMatrix);
     }
 
     for (const callback of this._eventListeners['frame']) {
       callback(timestamp);
     }
 
-    if (this._vrDisplay && this._vrDisplay.isPresenting) {
+    if (this.isPresenting) {
       this._vrDisplay.submitFrame();
     }
   }
