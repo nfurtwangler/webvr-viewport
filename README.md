@@ -7,4 +7,4 @@ It is not tied to a specific rendering engine, however WebVRViewportEffect has b
 
 The samples are hosted here to try out:
 
-https://nfurtwangler.github.io/webvr-viewport/samples/
+https://nfurtwangler.github.io/webvr-viewport/bin/samples/
