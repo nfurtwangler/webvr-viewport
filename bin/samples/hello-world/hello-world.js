@@ -2610,7 +2610,6 @@ var WebVRViewport = function () {
         // Update the mono camera and save the rotation quaternion
         this._monoCameraController.update();
         _glMatrix.mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
-        _glMatrix.mat4.getRotation(this._monoRotationQuat, this._monoCameraMatrix);
       }
 
       var _iteratorNormalCompletion2 = true;
@@ -2651,11 +2650,6 @@ var WebVRViewport = function () {
     key: 'isPresenting',
     get: function get() {
       return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
-    }
-  }, {
-    key: 'quaternion',
-    get: function get() {
-      return this._monoRotationQuat;
     }
   }, {
     key: 'leftProjectionMatrix',

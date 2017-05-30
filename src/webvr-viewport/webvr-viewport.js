@@ -66,10 +66,6 @@ class WebVRViewport {
     return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
   }
 
-  get quaternion() {
-    return this._monoRotationQuat;
-  }
-
   get leftProjectionMatrix() {
     return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
   }
@@ -252,7 +248,6 @@ class WebVRViewport {
       // Update the mono camera and save the rotation quaternion
       this._monoCameraController.update();
       mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
-      mat4.getRotation(this._monoRotationQuat, this._monoCameraMatrix);
     }
 
     for (const callback of this._eventListeners['frame']) {
