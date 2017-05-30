@@ -1,3 +1,6 @@
+// This is heavily influenced by the OVRUI controls for ReactVR
+// https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/DeviceOrientationControls.js
+
 import { glMatrix, mat4, quat, vec3 } from 'gl-matrix';
 
 class CameraControllerOrientation {

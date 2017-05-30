@@ -10,6 +10,7 @@
     "dot-notation": "off",
     "max-len": "off",
     "no-bitwise": "off",
+    "linebreak-style": "off", // God damnit, it always gets flipped
   },
   "env": {
     "browser": true
