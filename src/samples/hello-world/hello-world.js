@@ -125,12 +125,6 @@ const initScene = (loadedCallback) => {
 
   // Start loading the image
   image.src = cubeImageUrl;
-
-  // Provide an enter VR button overlay
-  const enterVRButton = document.querySelector('#enter-vr-button');
-  enterVRButton.addEventListener('click', () => {
-    viewport.enterVR();
-  });
 };
 
 const update = (timestamp) => {
@@ -190,6 +184,20 @@ const onAnimationFrame = (timestamp) => {
 document.addEventListener('DOMContentLoaded', () => {
   initScene(() => {
     viewport.addEventListener('frame', onAnimationFrame);
+
+    const enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
+    enterFullscreenButton.addEventListener('click', () => {
+      viewport.enterFullscreen();
+    });
+
+    if (viewport.hasVRDisplay) {
+      // Provide an enter VR button if there is a VRDisplay attached
+      const enterVRButton = document.querySelector('#enter-vr-button');
+      enterVRButton.classList.remove('hidden');
+      enterVRButton.addEventListener('click', () => {
+        viewport.enterVR();
+      });
+    }
   });
-  document.body.insertBefore(viewport.canvasElement, document.querySelector('#enter-vr-button')); // TODO: figure out best way of placing canvas on page
+  document.querySelector('#canvas-container').appendChild(viewport.canvasElement);
 });

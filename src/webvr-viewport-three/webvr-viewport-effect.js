@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { mat4, quat, vec3 } from 'gl-matrix';
 
+const DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
 const DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
 const DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
 
@@ -31,6 +32,7 @@ export default class WebVRViewportEffect {
     this._rightViewRotation = quat.create();
 
     this._renderer = renderer;
+    this._monoBounds = DEFAULT_MONO_BOUNDS;
     this._leftBounds = DEFAULT_LEFT_BOUNDS;
     this._rightBounds = DEFAULT_RIGHT_BOUNDS;
   }
@@ -51,11 +53,12 @@ export default class WebVRViewportEffect {
     this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
 
     const size = this._renderer.getSize();
+    const leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
     const leftRect = {
-      x: Math.round(size.width * this._leftBounds[0]),
-      y: Math.round(size.height * this._leftBounds[1]),
-      width: Math.round(size.width * this._leftBounds[2]),
-      height: Math.round(size.height * this._leftBounds[3]),
+      x: Math.round(size.width * leftBounds[0]),
+      y: Math.round(size.height * leftBounds[1]),
+      width: Math.round(size.width * leftBounds[2]),
+      height: Math.round(size.height * leftBounds[3]),
     };
     const rightRect = {
       x: Math.round(size.width * this._rightBounds[0]),
@@ -91,10 +94,8 @@ export default class WebVRViewportEffect {
     }
 
     // Set up the left eye viewport and scissor
-    if (viewport.isPresenting) {
-      this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-      this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-    }
+    this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+    this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
 
     // Always render left eye even if we are in mono
     this._renderer.render(scene, this._leftCamera);

@@ -46043,6 +46043,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
 var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
 var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
 
@@ -46070,6 +46071,7 @@ var WebVRViewportEffect = function () {
     this._rightViewRotation = _glMatrix.quat.create();
 
     this._renderer = renderer;
+    this._monoBounds = DEFAULT_MONO_BOUNDS;
     this._leftBounds = DEFAULT_LEFT_BOUNDS;
     this._rightBounds = DEFAULT_RIGHT_BOUNDS;
   }
@@ -46093,11 +46095,12 @@ var WebVRViewportEffect = function () {
       this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
 
       var size = this._renderer.getSize();
+      var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
       var leftRect = {
-        x: Math.round(size.width * this._leftBounds[0]),
-        y: Math.round(size.height * this._leftBounds[1]),
-        width: Math.round(size.width * this._leftBounds[2]),
-        height: Math.round(size.height * this._leftBounds[3])
+        x: Math.round(size.width * leftBounds[0]),
+        y: Math.round(size.height * leftBounds[1]),
+        width: Math.round(size.width * leftBounds[2]),
+        height: Math.round(size.height * leftBounds[3])
       };
       var rightRect = {
         x: Math.round(size.width * this._rightBounds[0]),
@@ -46133,10 +46136,8 @@ var WebVRViewportEffect = function () {
       }
 
       // Set up the left eye viewport and scissor
-      if (viewport.isPresenting) {
-        this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-        this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-      }
+      this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+      this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
 
       // Always render left eye even if we are in mono
       this._renderer.render(scene, this._leftCamera);

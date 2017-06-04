@@ -2448,6 +2448,24 @@ var WebVRViewport = function () {
       }
     }
   }, {
+    key: 'enterFullscreen',
+    value: function enterFullscreen() {
+      var fullscreenMethod = null;
+      if ('requestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'requestFullscreen';
+      } else if ('webkitRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'webkitRequestFullscreen';
+      } else if ('mozRequestFullScreen' in Element.prototype) {
+        fullscreenMethod = 'mozRequestFullScreen';
+      } else if ('msRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'msRequestFullscreen';
+      }
+
+      if (this.canvasElement[fullscreenMethod]) {
+        this.canvasElement[fullscreenMethod]();
+      }
+    }
+  }, {
     key: 'resize',
     value: function resize(newWidth, newHeight) {
       var width = newWidth;
@@ -2645,6 +2663,11 @@ var WebVRViewport = function () {
     key: 'canvasElement',
     get: function get() {
       return this._canvasElement;
+    }
+  }, {
+    key: 'hasVRDisplay',
+    get: function get() {
+      return this._vrDisplay !== undefined;
     }
   }, {
     key: 'isPresenting',
@@ -2877,12 +2900,6 @@ var initScene = function initScene(loadedCallback) {
 
   // Start loading the image
   image.src = _cubeSea2.default;
-
-  // Provide an enter VR button overlay
-  var enterVRButton = document.querySelector('#enter-vr-button');
-  enterVRButton.addEventListener('click', function () {
-    viewport.enterVR();
-  });
 };
 
 var update = function update(timestamp) {
@@ -2942,8 +2959,22 @@ var onAnimationFrame = function onAnimationFrame(timestamp) {
 document.addEventListener('DOMContentLoaded', function () {
   initScene(function () {
     viewport.addEventListener('frame', onAnimationFrame);
+
+    var enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
+    enterFullscreenButton.addEventListener('click', function () {
+      viewport.enterFullscreen();
+    });
+
+    if (viewport.hasVRDisplay) {
+      // Provide an enter VR button if there is a VRDisplay attached
+      var enterVRButton = document.querySelector('#enter-vr-button');
+      enterVRButton.classList.remove('hidden');
+      enterVRButton.addEventListener('click', function () {
+        viewport.enterVR();
+      });
+    }
   });
-  document.body.insertBefore(viewport.canvasElement, document.querySelector('#enter-vr-button')); // TODO: figure out best way of placing canvas on page
+  document.querySelector('#canvas-container').appendChild(viewport.canvasElement);
 });
 
 /***/ }),
@@ -3169,7 +3200,7 @@ exports = module.exports = __webpack_require__(12)();
 
 
 // module
-exports.push([module.i, "canvas {\n  position: absolute;\n  left: 0px;\n  top: 0px;\n  width: 100%;\n  height: 100%;\n}\n\n.button {\n  position: absolute;\n  left: 0px;\n  top: 0px;\n  width: 80px;\n  height: 30px;\n  line-height: 30px;\n  background-color: white;\n  color: black;\n  border: 4px solid #acacac;\n  font-family: Arial, Helvetica, sans-serif;\n  text-align: center;\n  cursor: pointer;\n}\n", ""]);
+exports.push([module.i, "body {\n  margin: 0px;\n}\n\ncanvas {\n  width: 100%;\n  height: 100%;\n}\n\n.button-list {\n  position: absolute;\n  left: 30px;\n  top: 30px;\n  display: flex;\n  flex-direction: column;\n  width: 100px;\n  height: 100%;\n  justify-content: flex-start;\n}\n\n.button {\n  width: 80px;\n  height: 30px;\n  line-height: 30px;\n  background-color: white;\n  color: black;\n  border: 4px solid #acacac;\n  font-family: Arial, Helvetica, sans-serif;\n  text-align: center;\n  cursor: pointer;\n}\n\n.hidden {\n  display: none;\n}\n", ""]);
 
 // exports
 

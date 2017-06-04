@@ -62,6 +62,10 @@ class WebVRViewport {
     return this._canvasElement;
   }
 
+  get hasVRDisplay() {
+    return this._vrDisplay !== undefined;
+  }
+
   get isPresenting() {
     return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
   }
@@ -115,6 +119,23 @@ class WebVRViewport {
       }).catch((err) => {
         console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
       });
+    }
+  }
+
+  enterFullscreen() {
+    let fullscreenMethod = null;
+    if ('requestFullscreen' in Element.prototype) {
+      fullscreenMethod = 'requestFullscreen';
+    } else if ('webkitRequestFullscreen' in Element.prototype) {
+      fullscreenMethod = 'webkitRequestFullscreen';
+    } else if ('mozRequestFullScreen' in Element.prototype) {
+      fullscreenMethod = 'mozRequestFullScreen';
+    } else if ('msRequestFullscreen' in Element.prototype) {
+      fullscreenMethod = 'msRequestFullscreen';
+    }
+
+    if (this.canvasElement[fullscreenMethod]) {
+      this.canvasElement[fullscreenMethod]();
     }
   }
 

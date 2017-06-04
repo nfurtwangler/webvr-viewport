@@ -2662,6 +2662,24 @@ var WebVRViewport = function () {
       }
     }
   }, {
+    key: 'enterFullscreen',
+    value: function enterFullscreen() {
+      var fullscreenMethod = null;
+      if ('requestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'requestFullscreen';
+      } else if ('webkitRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'webkitRequestFullscreen';
+      } else if ('mozRequestFullScreen' in Element.prototype) {
+        fullscreenMethod = 'mozRequestFullScreen';
+      } else if ('msRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'msRequestFullscreen';
+      }
+
+      if (this.canvasElement[fullscreenMethod]) {
+        this.canvasElement[fullscreenMethod]();
+      }
+    }
+  }, {
     key: 'resize',
     value: function resize(newWidth, newHeight) {
       var width = newWidth;
@@ -2859,6 +2877,11 @@ var WebVRViewport = function () {
     key: 'canvasElement',
     get: function get() {
       return this._canvasElement;
+    }
+  }, {
+    key: 'hasVRDisplay',
+    get: function get() {
+      return this._vrDisplay !== undefined;
     }
   }, {
     key: 'isPresenting',

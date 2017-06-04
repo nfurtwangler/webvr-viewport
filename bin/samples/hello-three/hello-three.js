@@ -46043,6 +46043,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
 var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
 var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
 
@@ -46070,6 +46071,7 @@ var WebVRViewportEffect = function () {
     this._rightViewRotation = _glMatrix.quat.create();
 
     this._renderer = renderer;
+    this._monoBounds = DEFAULT_MONO_BOUNDS;
     this._leftBounds = DEFAULT_LEFT_BOUNDS;
     this._rightBounds = DEFAULT_RIGHT_BOUNDS;
   }
@@ -46093,11 +46095,12 @@ var WebVRViewportEffect = function () {
       this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
 
       var size = this._renderer.getSize();
+      var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
       var leftRect = {
-        x: Math.round(size.width * this._leftBounds[0]),
-        y: Math.round(size.height * this._leftBounds[1]),
-        width: Math.round(size.width * this._leftBounds[2]),
-        height: Math.round(size.height * this._leftBounds[3])
+        x: Math.round(size.width * leftBounds[0]),
+        y: Math.round(size.height * leftBounds[1]),
+        width: Math.round(size.width * leftBounds[2]),
+        height: Math.round(size.height * leftBounds[3])
       };
       var rightRect = {
         x: Math.round(size.width * this._rightBounds[0]),
@@ -46133,10 +46136,8 @@ var WebVRViewportEffect = function () {
       }
 
       // Set up the left eye viewport and scissor
-      if (viewport.isPresenting) {
-        this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-        this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-      }
+      this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+      this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
 
       // Always render left eye even if we are in mono
       this._renderer.render(scene, this._leftCamera);
@@ -46292,6 +46293,24 @@ var WebVRViewport = function () {
         }).catch(function (err) {
           console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
         });
+      }
+    }
+  }, {
+    key: 'enterFullscreen',
+    value: function enterFullscreen() {
+      var fullscreenMethod = null;
+      if ('requestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'requestFullscreen';
+      } else if ('webkitRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'webkitRequestFullscreen';
+      } else if ('mozRequestFullScreen' in Element.prototype) {
+        fullscreenMethod = 'mozRequestFullScreen';
+      } else if ('msRequestFullscreen' in Element.prototype) {
+        fullscreenMethod = 'msRequestFullscreen';
+      }
+
+      if (this.canvasElement[fullscreenMethod]) {
+        this.canvasElement[fullscreenMethod]();
       }
     }
   }, {
@@ -46494,6 +46513,11 @@ var WebVRViewport = function () {
       return this._canvasElement;
     }
   }, {
+    key: 'hasVRDisplay',
+    get: function get() {
+      return this._vrDisplay !== undefined;
+    }
+  }, {
     key: 'isPresenting',
     get: function get() {
       return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
@@ -46685,12 +46709,6 @@ var initScene = function initScene(loadedCallback) {
     // Done loading
     loadedCallback();
   });
-
-  // Provide an enter VR button overlay
-  var enterVRButton = document.querySelector('#enter-vr-button');
-  enterVRButton.addEventListener('click', function () {
-    viewport.enterVR();
-  });
 };
 
 var update = function update(timestamp) {
@@ -46711,8 +46729,22 @@ var onAnimationFrame = function onAnimationFrame(timestamp) {
 document.addEventListener('DOMContentLoaded', function () {
   initScene(function () {
     viewport.addEventListener('frame', onAnimationFrame);
+
+    var enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
+    enterFullscreenButton.addEventListener('click', function () {
+      viewport.enterFullscreen();
+    });
+
+    if (viewport.hasVRDisplay) {
+      // Provide an enter VR button if there is a VRDisplay attached
+      var enterVRButton = document.querySelector('#enter-vr-button');
+      enterVRButton.classList.remove('hidden');
+      enterVRButton.addEventListener('click', function () {
+        viewport.enterVR();
+      });
+    }
   });
-  document.body.insertBefore(viewport.canvasElement, document.querySelector('#enter-vr-button')); // TODO: figure out best way of placing canvas on page
+  document.body.insertBefore(viewport.canvasElement, document.querySelector('#enter-vr-button'));
 });
 
 /***/ }),
@@ -46938,7 +46970,7 @@ exports = module.exports = __webpack_require__(14)();
 
 
 // module
-exports.push([module.i, "canvas {\n  position: absolute;\n  left: 0px;\n  top: 0px;\n  width: 100%;\n  height: 100%;\n}\n\n.button {\n  position: absolute;\n  left: 0px;\n  top: 0px;\n  width: 80px;\n  height: 30px;\n  line-height: 30px;\n  background-color: white;\n  color: black;\n  border: 4px solid #acacac;\n  font-family: Arial, Helvetica, sans-serif;\n  text-align: center;\n  cursor: pointer;\n}\n", ""]);
+exports.push([module.i, "body {\n  margin: 0px;\n}\n\ncanvas {\n  width: 100%;\n  height: 100%;\n}\n\n.button-list {\n  position: absolute;\n  left: 30px;\n  top: 30px;\n  display: flex;\n  flex-direction: column;\n  width: 100px;\n  height: 100%;\n  justify-content: flex-start;\n}\n\n.button {\n  width: 80px;\n  height: 30px;\n  line-height: 30px;\n  background-color: white;\n  color: black;\n  border: 4px solid #acacac;\n  font-family: Arial, Helvetica, sans-serif;\n  text-align: center;\n  cursor: pointer;\n}\n\n.hidden {\n  display: none;\n}\n", ""]);
 
 // exports
 
