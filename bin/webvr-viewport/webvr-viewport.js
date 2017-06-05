@@ -2718,40 +2718,13 @@ var WebVRViewport = function () {
 
       this._monoCameraController.resize(width, height, fov, aspect);
 
-      if (this._eventListeners['resize']) {
-        var resizeParams = {
-          width: width,
-          height: height,
-          fov: fov,
-          aspect: aspect,
-          pixelRatio: pixelRatio
-        };
-
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-          for (var _iterator = this._eventListeners['resize'][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var callback = _step.value;
-
-            callback(resizeParams);
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-              _iterator.return();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
-        }
-      }
+      this._emitEvent('resize', {
+        width: width,
+        height: height,
+        fov: fov,
+        aspect: aspect,
+        pixelRatio: pixelRatio
+      });
     }
   }, {
     key: '_addResizeHandler',
@@ -2803,11 +2776,41 @@ var WebVRViewport = function () {
             // We reuse this every frame to avoid generating garbage
             _this2._frameData = new VRFrameData(); // eslint-disable-line no-undef
             _this2._vrDisplay = displays[0];
+            _this2._emitEvent('vrdisplayactivate');
 
-            // TODO: emit an event here that indicates VR display is available
             // TODO: hook vrdisplay events on window in case it disconnects or is connected later
           }
         });
+      }
+    }
+  }, {
+    key: '_emitEvent',
+    value: function _emitEvent(event, args) {
+      if (this._eventListeners[event]) {
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = this._eventListeners[event][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var callback = _step.value;
+
+            callback(args);
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator.return) {
+              _iterator.return();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
       }
     }
   }, {
@@ -2844,30 +2847,7 @@ var WebVRViewport = function () {
         _glMatrix.mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
       }
 
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
-
-      try {
-        for (var _iterator2 = this._eventListeners['frame'][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var callback = _step2.value;
-
-          callback(timestamp);
-        }
-      } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
-          }
-        } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
-          }
-        }
-      }
+      this._emitEvent('frame', timestamp);
 
       if (this.isPresenting) {
         this._vrDisplay.submitFrame();

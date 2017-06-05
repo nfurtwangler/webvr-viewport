@@ -176,19 +176,13 @@ class WebVRViewport {
 
     this._monoCameraController.resize(width, height, fov, aspect);
 
-    if (this._eventListeners['resize']) {
-      const resizeParams = {
-        width,
-        height,
-        fov,
-        aspect,
-        pixelRatio,
-      };
-
-      for (const callback of this._eventListeners['resize']) {
-        callback(resizeParams);
-      }
-    }
+    this._emitEvent('resize', {
+      width,
+      height,
+      fov,
+      aspect,
+      pixelRatio,
+    });
   }
 
   _addResizeHandler() {
@@ -234,13 +228,22 @@ class WebVRViewport {
           // We reuse this every frame to avoid generating garbage
           this._frameData = new VRFrameData(); // eslint-disable-line no-undef
           this._vrDisplay = displays[0];
+          this._emitEvent('vrdisplayactivate');
 
-          // TODO: emit an event here that indicates VR display is available
           // TODO: hook vrdisplay events on window in case it disconnects or is connected later
         }
       });
     }
   }
+
+  _emitEvent(event, args) {
+    if (this._eventListeners[event]) {
+      for (const callback of this._eventListeners[event]) {
+        callback(args);
+      }
+    }
+  }
+
   _onFirstEventListener(key) {
     if (key === 'frame') {
       this._requestAnimationFrame();
@@ -271,9 +274,7 @@ class WebVRViewport {
       mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
     }
 
-    for (const callback of this._eventListeners['frame']) {
-      callback(timestamp);
-    }
+    this._emitEvent('frame', timestamp);
 
     if (this.isPresenting) {
       this._vrDisplay.submitFrame();

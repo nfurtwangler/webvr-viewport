@@ -12,8 +12,9 @@ let uniforms;       // A map of shader uniforms to their location in the program
 let vertBuffer;     // Vertex buffer used for rendering the scene
 let texture;        // The texture that will be bound to the diffuse sampler
 let quadModelMat;   // The quad's model matrix which we will animate
+let loaded = false; // True once our textures are loaded
 
-const initScene = (loadedCallback) => {
+const initScene = () => {
   viewport = new WebVRViewport({
     // Default options
   });
@@ -120,7 +121,8 @@ const initScene = (loadedCallback) => {
 
     // To avoid bad aliasing artifacts we will generate mip maps to use when rendering this texture at various distances
     gl.generateMipmap(gl.TEXTURE_2D);
-    loadedCallback();
+
+    loaded = true;
   }, false);
 
   // Start loading the image
@@ -135,6 +137,10 @@ const update = (timestamp) => {
 };
 
 const render = (projectionMat, viewMat) => {
+  if (!loaded) {
+    return;
+  }
+
   gl.useProgram(quadProgram);
 
   gl.uniformMatrix4fv(uniforms.projectionMat, false, projectionMat);
@@ -182,22 +188,20 @@ const onAnimationFrame = (timestamp) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  initScene(() => {
-    viewport.addEventListener('frame', onAnimationFrame);
-
-    const enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
-    enterFullscreenButton.addEventListener('click', () => {
-      viewport.enterFullscreen();
-    });
-
-    if (viewport.hasVRDisplay) {
-      // Provide an enter VR button if there is a VRDisplay attached
-      const enterVRButton = document.querySelector('#enter-vr-button');
-      enterVRButton.classList.remove('hidden');
-      enterVRButton.addEventListener('click', () => {
-        viewport.enterVR();
-      });
-    }
-  });
+  initScene();
   document.querySelector('#canvas-container').appendChild(viewport.canvasElement);
+  viewport.addEventListener('frame', onAnimationFrame);
+
+  const enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
+  enterFullscreenButton.addEventListener('click', () => {
+    viewport.enterFullscreen();
+  });
+
+  const enterVRButton = document.querySelector('#enter-vr-button');
+  enterVRButton.addEventListener('click', () => {
+    viewport.enterVR();
+  });
+  viewport.addEventListener('vrdisplayactivate', () => {
+    enterVRButton.classList.remove('hidden');
+  });
 });

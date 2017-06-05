@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import WebVRViewport from '../../webvr-viewport/webvr-viewport';
 import WebVRViewportEffect from '../../webvr-viewport-three/webvr-viewport-effect';
 import cubeImageUrl from './assets/cube-sea.png';
+import chessWorldImageUrl from './assets/chess-world.jpg';
 
-import './hello-three.css';
+import './input.css';
 
-class HelloThreeSample {
+class InputSample {
   constructor() {
     // WebVRViewport used for controlling the view and entering VR
     this._viewport = new WebVRViewport({
@@ -55,9 +56,16 @@ class HelloThreeSample {
     // Floating WebVR logo
     const cubeFaceGeo = new THREE.PlaneGeometry(0.4, 0.4);
     const cubeFaceMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + cubeImageUrl) });
-    this._cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
-    this._cubeFace.position.setZ(-1);
-    this._scene.add(this._cubeFace);
+    const cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
+    cubeFace.position.setZ(-1);
+    this._scene.add(cubeFace);
+
+    // Equirect pano image for background
+    const sphereGeo = new THREE.SphereGeometry(1000, 50, 50);
+    const sphereMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + chessWorldImageUrl) });
+    sphereGeo.scale(-1, 1, 1);
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    this._scene.add(sphere);
 
     // Kick off rendering
     this._viewport.addEventListener('frame', this.render.bind(this));
@@ -67,19 +75,14 @@ class HelloThreeSample {
     this._effect.resize(params);
   }
 
-  render(timestamp) {
-    // Animate the z location of the quad based on the current frame timestamp
-    const oscillationSpeed = Math.PI / 2;
-    const z = -1 + Math.cos((oscillationSpeed * timestamp) / 1000);
-    this._cubeFace.position.set(0, 0, z - 1);
-
+  render() {
     this._effect.render(this._scene, this._viewport);
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   // Stash on global for better debugging
-  window.sample = new HelloThreeSample();
+  window.sample = new InputSample();
 
   // Kick off loading and rendering
   window.sample.load();

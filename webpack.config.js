@@ -143,4 +143,38 @@ module.exports = [
       ],
     },
   },
+  {
+    entry: './src/samples/input/input.js',
+    output: {
+      path: __dirname + '/bin/samples/input/',
+      filename: 'input.js',
+      sourceMapFilename: '[file].map',
+      devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
+    },
+    plugins: [new HtmlWebpackPlugin({
+      template: './src/samples/input/input.template.ejs',
+      inject: 'head'
+    })],
+    devtool: 'source-map',
+    devServer: {
+      publicPath: '/bin/'
+    },
+    module: {
+      loaders: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loaders: ['babel-loader', 'eslint-loader'],
+        },
+        {
+          test: /\.css$/,
+          loaders: ['style-loader', 'css-loader'],
+        },
+        {
+          test: /\.(jpg|png)$/,
+          loaders: ['file-loader'],
+        },
+      ],
+    },
+  },
 ];

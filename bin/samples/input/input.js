@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -175,12 +175,12 @@ THE SOFTWARE. */
 // END HEADER
 
 exports.glMatrix = __webpack_require__(0);
-exports.mat2 = __webpack_require__(15);
-exports.mat2d = __webpack_require__(16);
+exports.mat2 = __webpack_require__(16);
+exports.mat2d = __webpack_require__(17);
 exports.mat3 = __webpack_require__(3);
-exports.mat4 = __webpack_require__(17);
-exports.quat = __webpack_require__(18);
-exports.vec2 = __webpack_require__(19);
+exports.mat4 = __webpack_require__(18);
+exports.quat = __webpack_require__(19);
+exports.vec2 = __webpack_require__(20);
 exports.vec3 = __webpack_require__(4);
 exports.vec4 = __webpack_require__(5);
 
@@ -46197,11 +46197,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _glMatrix = __webpack_require__(1);
 
-var _cameraControllerMouse = __webpack_require__(11);
+var _cameraControllerMouse = __webpack_require__(12);
 
 var _cameraControllerMouse2 = _interopRequireDefault(_cameraControllerMouse);
 
-var _cameraControllerOrientation = __webpack_require__(12);
+var _cameraControllerOrientation = __webpack_require__(13);
 
 var _cameraControllerOrientation2 = _interopRequireDefault(_cameraControllerOrientation);
 
@@ -46586,26 +46586,32 @@ exports.default = WebVRViewport;
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__.p + "1cbe5d588671425f3a279b293c5d573e.png";
+module.exports = __webpack_require__.p + "c72ced8776d8fe2a710b6a7d78375ec9.jpg";
 
 /***/ }),
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
+module.exports = __webpack_require__.p + "1cbe5d588671425f3a279b293c5d573e.png";
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(13);
+var content = __webpack_require__(14);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(20)(content, {});
+var update = __webpack_require__(21)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!./hello-three.css", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!./hello-three.css");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!./input.css", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!./input.css");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -46615,7 +46621,7 @@ if(false) {
 }
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -46635,11 +46641,15 @@ var _webvrViewportEffect = __webpack_require__(6);
 
 var _webvrViewportEffect2 = _interopRequireDefault(_webvrViewportEffect);
 
-var _cubeSea = __webpack_require__(8);
+var _cubeSea = __webpack_require__(9);
 
 var _cubeSea2 = _interopRequireDefault(_cubeSea);
 
-__webpack_require__(9);
+var _chessWorld = __webpack_require__(8);
+
+var _chessWorld2 = _interopRequireDefault(_chessWorld);
+
+__webpack_require__(10);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -46647,11 +46657,11 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var HelloThreeSample = function () {
-  function HelloThreeSample() {
+var InputSample = function () {
+  function InputSample() {
     var _this = this;
 
-    _classCallCheck(this, HelloThreeSample);
+    _classCallCheck(this, InputSample);
 
     // WebVRViewport used for controlling the view and entering VR
     this._viewport = new _webvrViewport2.default({
@@ -46695,7 +46705,7 @@ var HelloThreeSample = function () {
     });
   }
 
-  _createClass(HelloThreeSample, [{
+  _createClass(InputSample, [{
     key: 'load',
     value: function load() {
       var loader = new THREE.TextureLoader();
@@ -46703,9 +46713,16 @@ var HelloThreeSample = function () {
       // Floating WebVR logo
       var cubeFaceGeo = new THREE.PlaneGeometry(0.4, 0.4);
       var cubeFaceMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + _cubeSea2.default) });
-      this._cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
-      this._cubeFace.position.setZ(-1);
-      this._scene.add(this._cubeFace);
+      var cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
+      cubeFace.position.setZ(-1);
+      this._scene.add(cubeFace);
+
+      // Equirect pano image for background
+      var sphereGeo = new THREE.SphereGeometry(1000, 50, 50);
+      var sphereMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + _chessWorld2.default) });
+      sphereGeo.scale(-1, 1, 1);
+      var sphere = new THREE.Mesh(sphereGeo, sphereMat);
+      this._scene.add(sphere);
 
       // Kick off rendering
       this._viewport.addEventListener('frame', this.render.bind(this));
@@ -46717,29 +46734,24 @@ var HelloThreeSample = function () {
     }
   }, {
     key: 'render',
-    value: function render(timestamp) {
-      // Animate the z location of the quad based on the current frame timestamp
-      var oscillationSpeed = Math.PI / 2;
-      var z = -1 + Math.cos(oscillationSpeed * timestamp / 1000);
-      this._cubeFace.position.set(0, 0, z - 1);
-
+    value: function render() {
       this._effect.render(this._scene, this._viewport);
     }
   }]);
 
-  return HelloThreeSample;
+  return InputSample;
 }();
 
 document.addEventListener('DOMContentLoaded', function () {
   // Stash on global for better debugging
-  window.sample = new HelloThreeSample();
+  window.sample = new InputSample();
 
   // Kick off loading and rendering
   window.sample.load();
 });
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -46840,7 +46852,7 @@ var CameraControllerMouse = function () {
 exports.default = CameraControllerMouse;
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -46953,10 +46965,10 @@ var CameraControllerOrientation = function () {
 exports.default = CameraControllerOrientation;
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(14)();
+exports = module.exports = __webpack_require__(15)();
 // imports
 
 
@@ -46967,7 +46979,7 @@ exports.push([module.i, "body {\n  margin: 0px;\n}\n\ncanvas {\n  width: 100%;\n
 
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports) {
 
 /*
@@ -47023,7 +47035,7 @@ module.exports = function() {
 
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -47465,7 +47477,7 @@ module.exports = mat2;
 
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -47940,7 +47952,7 @@ module.exports = mat2d;
 
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -50082,7 +50094,7 @@ module.exports = mat4;
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -50688,7 +50700,7 @@ module.exports = quat;
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -51281,7 +51293,7 @@ module.exports = vec2;
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports) {
 
 /*
@@ -51534,4 +51546,4 @@ function updateLink(linkElement, obj) {
 
 /***/ })
 /******/ ]);
-//# sourceMappingURL=hello-three.js.map
+//# sourceMappingURL=input.js.map
