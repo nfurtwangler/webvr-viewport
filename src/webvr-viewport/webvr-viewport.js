@@ -62,10 +62,6 @@ class WebVRViewport {
     return this._canvasElement;
   }
 
-  get hasVRDisplay() {
-    return this._vrDisplay !== undefined;
-  }
-
   get isPresenting() {
     return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
   }

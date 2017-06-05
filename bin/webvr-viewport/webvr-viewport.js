@@ -2859,11 +2859,6 @@ var WebVRViewport = function () {
       return this._canvasElement;
     }
   }, {
-    key: 'hasVRDisplay',
-    get: function get() {
-      return this._vrDisplay !== undefined;
-    }
-  }, {
     key: 'isPresenting',
     get: function get() {
       return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
