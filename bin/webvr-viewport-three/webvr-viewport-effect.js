@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 11);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -2325,12 +2325,12 @@ THE SOFTWARE. */
 // END HEADER
 
 exports.glMatrix = __webpack_require__(0);
-exports.mat2 = __webpack_require__(7);
-exports.mat2d = __webpack_require__(8);
+exports.mat2 = __webpack_require__(6);
+exports.mat2d = __webpack_require__(7);
 exports.mat3 = __webpack_require__(1);
-exports.mat4 = __webpack_require__(9);
-exports.quat = __webpack_require__(10);
-exports.vec2 = __webpack_require__(11);
+exports.mat4 = __webpack_require__(8);
+exports.quat = __webpack_require__(9);
+exports.vec2 = __webpack_require__(10);
 exports.vec3 = __webpack_require__(2);
 exports.vec4 = __webpack_require__(3);
 
@@ -46021,171 +46021,6 @@ function CanvasRenderer() {
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /**
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Heavily inspired by VREffect by dmarcos and mrdoob
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * https://github.com/mrdoob/three.js/
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
-
-var _three = __webpack_require__(5);
-
-var THREE = _interopRequireWildcard(_three);
-
-var _glMatrix = __webpack_require__(4);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
-var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
-var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
-
-var WebVRViewportEffect = function () {
-  function WebVRViewportEffect(renderer) {
-    _classCallCheck(this, WebVRViewportEffect);
-
-    this._leftCamera = new THREE.PerspectiveCamera();
-    this._leftCamera.layers.enable(1);
-    this._leftCamera.viewID = 0;
-
-    this._rightCamera = new THREE.PerspectiveCamera();
-    this._rightCamera.layers.enable(2);
-    this._rightCamera.viewID = 1;
-
-    this._leftEyeOffset = new THREE.Vector3();
-    this._rightEyeOffset = new THREE.Vector3();
-
-    // These are intermediate viarables used to convert from gl-matrix to THREE math types
-    this._leftCameraMatrix = _glMatrix.mat4.create();
-    this._rightCameraMatrix = _glMatrix.mat4.create();
-    this._leftViewTranslation = _glMatrix.vec3.create();
-    this._rightViewTranslation = _glMatrix.vec3.create();
-    this._leftViewRotation = _glMatrix.quat.create();
-    this._rightViewRotation = _glMatrix.quat.create();
-
-    this._renderer = renderer;
-    this._monoBounds = DEFAULT_MONO_BOUNDS;
-    this._leftBounds = DEFAULT_LEFT_BOUNDS;
-    this._rightBounds = DEFAULT_RIGHT_BOUNDS;
-  }
-
-  _createClass(WebVRViewportEffect, [{
-    key: 'resize',
-    value: function resize(params) {
-      this._renderer.setSize(params.width, params.height);
-      this._renderer.setPixelRatio(params.pixelRatio);
-    }
-  }, {
-    key: 'render',
-    value: function render(scene, viewport) {
-      var preserveAutoUpdate = scene.autoUpdate;
-      if (preserveAutoUpdate) {
-        scene.updateMatrixWorld();
-        scene.autoUpdate = false;
-      }
-
-      this._leftEyeOffset.fromArray(viewport.leftEyeOffset);
-      this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
-
-      var size = this._renderer.getSize();
-      var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
-      var leftRect = {
-        x: Math.round(size.width * leftBounds[0]),
-        y: Math.round(size.height * leftBounds[1]),
-        width: Math.round(size.width * leftBounds[2]),
-        height: Math.round(size.height * leftBounds[3])
-      };
-      var rightRect = {
-        x: Math.round(size.width * this._rightBounds[0]),
-        y: Math.round(size.height * this._rightBounds[1]),
-        width: Math.round(size.width * this._rightBounds[2]),
-        height: Math.round(size.height * this._rightBounds[3])
-      };
-
-      this._renderer.setScissorTest(true);
-
-      if (this._renderer.autoClear) {
-        this._renderer.clear();
-      }
-
-      _glMatrix.mat4.invert(this._leftCameraMatrix, viewport.leftViewMatrix);
-      _glMatrix.mat4.getTranslation(this._leftViewTranslation, this._leftCameraMatrix);
-      _glMatrix.mat4.getRotation(this._leftViewRotation, this._leftCameraMatrix);
-      this._leftCamera.position.set(this._leftViewTranslation[0], this._leftViewTranslation[1], this._leftViewTranslation[2]);
-      this._leftCamera.quaternion.set(this._leftViewRotation[0], this._leftViewRotation[1], this._leftViewRotation[2], this._leftViewRotation[3]);
-      this._leftCamera.translateOnAxis(this._leftEyeOffset, 1);
-      this._leftCamera.projectionMatrix.elements = viewport.leftProjectionMatrix;
-
-      // Prepare the scene backgrounds for each eye if ready
-      var backupScene = scene.background;
-
-      // Only allow stereo background rendering if both backgrounds have been set
-      // otherwise the user will see the background in only one eye.
-      var isStereoBackgroundReady = !!scene.backgroundLeft && !!scene.backgroundRight;
-
-      // Swap in our left eye background if both backgrounds are ready
-      if (isStereoBackgroundReady) {
-        scene.background = scene.backgroundLeft;
-      }
-
-      // Set up the left eye viewport and scissor
-      this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-      this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-
-      // Always render left eye even if we are in mono
-      this._renderer.render(scene, this._leftCamera);
-
-      if (viewport.isPresenting) {
-        // The right eye will only render if we are presenting
-        _glMatrix.mat4.invert(this._rightCameraMatrix, viewport.rightViewMatrix);
-        _glMatrix.mat4.getTranslation(this._rightViewTranslation, this._rightCameraMatrix);
-        _glMatrix.mat4.getRotation(this._rightViewRotation, this._rightCameraMatrix);
-        this._rightCamera.position.set(this._rightViewTranslation[0], this._rightViewTranslation[1], this._rightViewTranslation[2]);
-        this._rightCamera.quaternion.set(this._rightViewRotation[0], this._rightViewRotation[1], this._rightViewRotation[2], this._rightViewRotation[3]);
-        this._rightCamera.translateOnAxis(this._rightEyeOffset, 1);
-        this._rightCamera.projectionMatrix.elements = viewport.rightProjectionMatrix;
-
-        // Swap in our right eye background if both backgrounds are ready
-        if (isStereoBackgroundReady) {
-          scene.background = scene.backgroundRight;
-        }
-
-        // Set up the right eye viewport and scissor then render the right eye
-        this._renderer.setViewport(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
-        this._renderer.setScissor(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
-        this._renderer.render(scene, this._rightCamera);
-      }
-
-      // Reset the previous background
-      scene.background = backupScene;
-
-      // Reset viewport
-      this._renderer.setViewport(0, 0, size.width, size.height);
-      this._renderer.setScissorTest(false);
-
-      // Restores the scene's autoupdate property
-      if (preserveAutoUpdate) {
-        scene.autoUpdate = true;
-      }
-    }
-  }]);
-
-  return WebVRViewportEffect;
-}();
-
-exports.default = WebVRViewportEffect;
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -46625,7 +46460,7 @@ module.exports = mat2;
 
 
 /***/ }),
-/* 8 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -47100,7 +46935,7 @@ module.exports = mat2d;
 
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -49242,7 +49077,7 @@ module.exports = mat4;
 
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -49848,7 +49683,7 @@ module.exports = quat;
 
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -50438,6 +50273,127 @@ vec2.equals = function (a, b) {
 };
 
 module.exports = vec2;
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ * Heavily inspired by VREffect by dmarcos and mrdoob
+ * https://github.com/mrdoob/three.js/
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+var THREE = __webpack_require__(5);
+var gl_matrix_1 = __webpack_require__(4);
+var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
+var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
+var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
+var WebVRViewportEffect = (function () {
+    function WebVRViewportEffect(renderer) {
+        this._leftCamera = new THREE.PerspectiveCamera();
+        this._rightCamera = new THREE.PerspectiveCamera();
+        this._leftEyeOffset = new THREE.Vector3();
+        this._rightEyeOffset = new THREE.Vector3();
+        this._leftCameraMatrix = gl_matrix_1.mat4.create();
+        this._rightCameraMatrix = gl_matrix_1.mat4.create();
+        this._leftViewTranslation = gl_matrix_1.vec3.create();
+        this._rightViewTranslation = gl_matrix_1.vec3.create();
+        this._leftViewRotation = gl_matrix_1.quat.create();
+        this._rightViewRotation = gl_matrix_1.quat.create();
+        this._monoBounds = DEFAULT_MONO_BOUNDS;
+        this._leftBounds = DEFAULT_LEFT_BOUNDS;
+        this._rightBounds = DEFAULT_RIGHT_BOUNDS;
+        this._renderer = renderer;
+        this._leftCamera.layers.enable(1);
+        this._leftCamera.viewID = 0;
+        this._rightCamera.layers.enable(2);
+        this._rightCamera.viewID = 1;
+    }
+    WebVRViewportEffect.prototype.resize = function (params) {
+        this._renderer.setSize(params.width, params.height);
+        this._renderer.setPixelRatio(params.pixelRatio);
+    };
+    WebVRViewportEffect.prototype.render = function (scene, viewport) {
+        var preserveAutoUpdate = scene.autoUpdate;
+        if (preserveAutoUpdate) {
+            scene.updateMatrixWorld();
+            scene.autoUpdate = false;
+        }
+        this._leftEyeOffset.fromArray(viewport.leftEyeOffset);
+        this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
+        var size = this._renderer.getSize();
+        var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
+        var leftRect = {
+            x: Math.round(size.width * leftBounds[0]),
+            y: Math.round(size.height * leftBounds[1]),
+            width: Math.round(size.width * leftBounds[2]),
+            height: Math.round(size.height * leftBounds[3]),
+        };
+        var rightRect = {
+            x: Math.round(size.width * this._rightBounds[0]),
+            y: Math.round(size.height * this._rightBounds[1]),
+            width: Math.round(size.width * this._rightBounds[2]),
+            height: Math.round(size.height * this._rightBounds[3]),
+        };
+        this._renderer.setScissorTest(true);
+        if (this._renderer.autoClear) {
+            this._renderer.clear();
+        }
+        gl_matrix_1.mat4.invert(this._leftCameraMatrix, viewport.leftViewMatrix);
+        gl_matrix_1.mat4.getTranslation(this._leftViewTranslation, this._leftCameraMatrix);
+        gl_matrix_1.mat4.getRotation(this._leftViewRotation, this._leftCameraMatrix);
+        this._leftCamera.position.set(this._leftViewTranslation[0], this._leftViewTranslation[1], this._leftViewTranslation[2]);
+        this._leftCamera.quaternion.set(this._leftViewRotation[0], this._leftViewRotation[1], this._leftViewRotation[2], this._leftViewRotation[3]);
+        this._leftCamera.translateOnAxis(this._leftEyeOffset, 1);
+        this._leftCamera.projectionMatrix.elements = viewport.leftProjectionMatrix;
+        // Prepare the scene backgrounds for each eye if ready
+        var backupScene = scene.background;
+        // Only allow stereo background rendering if both backgrounds have been set
+        // otherwise the user will see the background in only one eye.
+        var isStereoBackgroundReady = !!scene.backgroundLeft && !!scene.backgroundRight;
+        // Swap in our left eye background if both backgrounds are ready
+        if (isStereoBackgroundReady) {
+            scene.background = scene.backgroundLeft;
+        }
+        // Set up the left eye viewport and scissor
+        this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+        this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+        // Always render left eye even if we are in mono
+        this._renderer.render(scene, this._leftCamera);
+        if (viewport.isPresenting) {
+            // The right eye will only render if we are presenting
+            gl_matrix_1.mat4.invert(this._rightCameraMatrix, viewport.rightViewMatrix);
+            gl_matrix_1.mat4.getTranslation(this._rightViewTranslation, this._rightCameraMatrix);
+            gl_matrix_1.mat4.getRotation(this._rightViewRotation, this._rightCameraMatrix);
+            this._rightCamera.position.set(this._rightViewTranslation[0], this._rightViewTranslation[1], this._rightViewTranslation[2]);
+            this._rightCamera.quaternion.set(this._rightViewRotation[0], this._rightViewRotation[1], this._rightViewRotation[2], this._rightViewRotation[3]);
+            this._rightCamera.translateOnAxis(this._rightEyeOffset, 1);
+            this._rightCamera.projectionMatrix.elements = viewport.rightProjectionMatrix;
+            // Swap in our right eye background if both backgrounds are ready
+            if (isStereoBackgroundReady) {
+                scene.background = scene.backgroundRight;
+            }
+            // Set up the right eye viewport and scissor then render the right eye
+            this._renderer.setViewport(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
+            this._renderer.setScissor(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
+            this._renderer.render(scene, this._rightCamera);
+        }
+        // Reset the previous background
+        scene.background = backupScene;
+        // Reset viewport
+        this._renderer.setViewport(0, 0, size.width, size.height);
+        this._renderer.setScissorTest(false);
+        // Restores the scene's autoupdate property
+        if (preserveAutoUpdate) {
+            scene.autoUpdate = true;
+        }
+    };
+    return WebVRViewportEffect;
+}());
+exports.default = WebVRViewportEffect;
 
 
 /***/ })

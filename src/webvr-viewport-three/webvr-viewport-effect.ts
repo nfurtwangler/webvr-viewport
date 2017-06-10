@@ -11,30 +11,29 @@ const DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
 const DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
 
 export default class WebVRViewportEffect {
+  private _leftCamera = new THREE.PerspectiveCamera();
+  private _rightCamera = new THREE.PerspectiveCamera();
+  private _leftEyeOffset = new THREE.Vector3();
+  private _rightEyeOffset = new THREE.Vector3();
+  private _leftCameraMatrix = mat4.create();
+  private _rightCameraMatrix = mat4.create();
+  private _leftViewTranslation = vec3.create();
+  private _rightViewTranslation = vec3.create();
+  private _leftViewRotation = quat.create();
+  private _rightViewRotation = quat.create();
+  private _monoBounds = DEFAULT_MONO_BOUNDS;
+  private _leftBounds = DEFAULT_LEFT_BOUNDS;
+  private _rightBounds = DEFAULT_RIGHT_BOUNDS;
+  private _renderer;
+
   constructor(renderer) {
-    this._leftCamera = new THREE.PerspectiveCamera();
+    this._renderer = renderer;
+
     this._leftCamera.layers.enable(1);
     this._leftCamera.viewID = 0;
 
-    this._rightCamera = new THREE.PerspectiveCamera();
     this._rightCamera.layers.enable(2);
     this._rightCamera.viewID = 1;
-
-    this._leftEyeOffset = new THREE.Vector3();
-    this._rightEyeOffset = new THREE.Vector3();
-
-    // These are intermediate viarables used to convert from gl-matrix to THREE math types
-    this._leftCameraMatrix = mat4.create();
-    this._rightCameraMatrix = mat4.create();
-    this._leftViewTranslation = vec3.create();
-    this._rightViewTranslation = vec3.create();
-    this._leftViewRotation = quat.create();
-    this._rightViewRotation = quat.create();
-
-    this._renderer = renderer;
-    this._monoBounds = DEFAULT_MONO_BOUNDS;
-    this._leftBounds = DEFAULT_LEFT_BOUNDS;
-    this._rightBounds = DEFAULT_RIGHT_BOUNDS;
   }
 
   resize(params) {

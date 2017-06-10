@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import WebVRViewport from '../../webvr-viewport/webvr-viewport';
-import WebVRViewportEffect from '../../webvr-viewport-three/webvr-viewport-effect';
+import WebVRViewport from '../../../bin/webvr-viewport/webvr-viewport';
+import WebVRViewportEffect from '../../../bin/webvr-viewport-three/webvr-viewport-effect';
 import cubeImageUrl from './assets/cube-sea.png';
 
 import './hello-three.css';

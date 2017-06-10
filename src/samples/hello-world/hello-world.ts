@@ -1,4 +1,4 @@
-import WebVRViewport from '../../webvr-viewport/webvr-viewport';
+import WebVRViewport from '../../../bin/webvr-viewport/webvr-viewport';
 
 import cubeImageUrl from './assets/cube-sea.png';
 

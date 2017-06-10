@@ -2,16 +2,65 @@ import { mat4, quat } from 'gl-matrix';
 import CameraControllerMouse from './camera-controller-mouse';
 import CameraControllerOrientation from './camera-controller-orientation';
 
+interface VRFrameData {
+  leftProjectionMatrix: Float32Array,
+  rightProjectionMatrix: Float32Array,
+  leftViewMatrix: Float32Array,
+  rightViewMatrix: Float32Array,
+}
+
+declare var VRFrameData: {
+    prototype: VRFrameData;
+    new(): VRFrameData;
+}
+
+interface VREyeParameters {
+  offset: Float32Array,
+  renderWidth: number,
+  renderHeight: number,
+  //...
+}
+
+interface VRLayerInit {
+  leftBounds?: [number, number, number, number];
+  rightBounds?: [number, number, number, number];
+  source: HTMLCanvasElement
+}
+
+interface VRDisplay {
+  isPresenting: boolean;
+  getEyeParameters(whichEye: "left"|"right"): VREyeParameters;
+  requestPresent(layers: VRLayerInit[]): Promise<void>;
+  requestAnimationFrame(callback: ()=>void): void;
+  getFrameData(data: VRFrameData): void;
+  submitFrame():void;
+}
+
+interface Navigator {
+  getVRDisplays(): Promise<VRDisplay>;
+}
+
 class WebVRViewport {
+  private _canvasElement: HTMLCanvasElement;
+  private _eventListeners = {};
+  private _animationFrameHandler = this._onAnimationFrame.bind(this);
+  private _monoProjectionMatrix = mat4.create();
+  private _monoCameraMatrix = mat4.create();
+  private _monoViewMatrix = mat4.create();
+  private _monoRotationQuat = quat.create();
+  private _parentElement: HTMLElement;
+  private _monoCameraController: CameraControllerOrientation|CameraControllerMouse;
+  private _fixedPixelRatio = true;
+  private _pixelRatio = 1;
+  private _wasPresenting = false;
+  private _vrDisplay: VRDisplay;
+  private _frameData: VRFrameData;
+  private _resizeHandler: () => void;
+  private _width: number;
+  private _height: number;
+
   constructor(options) {
     this._canvasElement = document.createElement('canvas');
-    this._eventListeners = {};
-    this._animationFrameHandler = this._onAnimationFrame.bind(this);
-
-    this._monoProjectionMatrix = mat4.create();
-    this._monoCameraMatrix = mat4.create();
-    this._monoViewMatrix = mat4.create();
-    this._monoRotationQuat = quat.create();
     this._monoCameraController = this._isDeviceOrientationSupported ?
                                  new CameraControllerOrientation(this._monoCameraMatrix) :
                                  new CameraControllerMouse(this._monoCameraMatrix);
@@ -43,8 +92,6 @@ class WebVRViewport {
     if (!pixelRatio) {
       this._fixedPixelRatio = false;
       pixelRatio = window.devicePixelRatio || 1;
-    } else {
-      this._fixedPixelRatio = true;
     }
 
     this._pixelRatio = pixelRatio;
@@ -218,8 +265,8 @@ class WebVRViewport {
   }
 
   _initVrDisplay() {
-    if (navigator.getVRDisplays) {
-      navigator.getVRDisplays().then((displays) => {
+    if ((navigator as any).getVRDisplays) {
+      (navigator as any).getVRDisplays().then((displays) => {
         if (displays.length > 0) {
           // We reuse this every frame to avoid generating garbage
           this._frameData = new VRFrameData(); // eslint-disable-line no-undef
@@ -232,7 +279,7 @@ class WebVRViewport {
     }
   }
 
-  _emitEvent(event, args) {
+  _emitEvent(event: string, args?: any) {
     if (this._eventListeners[event]) {
       for (const callback of this._eventListeners[event]) {
         callback(args);
@@ -294,7 +341,7 @@ class WebVRViewport {
       return false;
     }
 
-    const orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
+    const orientation = (screen as any).orientation || (screen as any).mozOrientation || screen.msOrientation;
     if (orientation) {
       if (orientation.type === 'landscape-primary' || orientation.type === 'landscape-secondary') {
         return true;
@@ -310,7 +357,7 @@ class WebVRViewport {
       return false;
     }
 
-    let quadrant = Math.round(window.orientation / 90);
+    let quadrant = Math.round(Number(window.orientation) / 90);
     while (quadrant < 0) {
       quadrant += 4;
     }
