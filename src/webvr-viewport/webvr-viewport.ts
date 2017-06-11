@@ -2,16 +2,82 @@ import { mat4, quat } from 'gl-matrix';
 import CameraControllerMouse from './camera-controller-mouse';
 import CameraControllerOrientation from './camera-controller-orientation';
 
-class WebVRViewport {
-  constructor(options) {
-    this._canvasElement = document.createElement('canvas');
-    this._eventListeners = {};
-    this._animationFrameHandler = this._onAnimationFrame.bind(this);
+interface VRFrameData {
+  leftProjectionMatrix: Float32Array,
+  rightProjectionMatrix: Float32Array,
+  leftViewMatrix: Float32Array,
+  rightViewMatrix: Float32Array,
+}
 
-    this._monoProjectionMatrix = mat4.create();
-    this._monoCameraMatrix = mat4.create();
-    this._monoViewMatrix = mat4.create();
-    this._monoRotationQuat = quat.create();
+declare var VRFrameData: {
+    prototype: VRFrameData;
+    new(): VRFrameData;
+}
+
+interface VREyeParameters {
+  offset: Float32Array,
+  renderWidth: number,
+  renderHeight: number,
+  //...
+}
+
+interface VRLayerInit {
+  leftBounds?: [number, number, number, number];
+  rightBounds?: [number, number, number, number];
+  source: HTMLCanvasElement
+}
+
+interface VRDisplay {
+  isPresenting: boolean;
+  getEyeParameters(whichEye: "left"|"right"): VREyeParameters;
+  requestPresent(layers: VRLayerInit[]): Promise<void>;
+  requestAnimationFrame(callback: ()=>void): void;
+  getFrameData(data: VRFrameData): void;
+  submitFrame():void;
+}
+
+interface Navigator {
+  getVRDisplays(): Promise<VRDisplay>;
+}
+
+export type EventHandler = (arg: any) => void;
+
+export interface ResizeParams {
+  width: number,
+  height: number,
+  fov: number,
+  aspect: number,
+  pixelRatio: number,
+}
+
+export interface WebVRViewportOptions {
+  width?: number,
+  height?: number,
+  pixelRatio?: number,
+  parentElement?: HTMLElement,
+}
+
+export class WebVRViewport {
+  private _canvasElement: HTMLCanvasElement;
+  private _eventListeners: {[key: string]: EventHandler[]} = {};
+  private _animationFrameHandler = this._onAnimationFrame.bind(this);
+  private _monoProjectionMatrix = mat4.create();
+  private _monoCameraMatrix = mat4.create();
+  private _monoViewMatrix = mat4.create();
+  private _monoRotationQuat = quat.create();
+  private _parentElement: HTMLElement;
+  private _monoCameraController: CameraControllerOrientation|CameraControllerMouse;
+  private _fixedPixelRatio = true;
+  private _pixelRatio = 1;
+  private _wasPresenting = false;
+  private _vrDisplay: VRDisplay;
+  private _frameData: VRFrameData;
+  private _resizeHandler: () => void;
+  private _width: number;
+  private _height: number;
+
+  constructor(options: WebVRViewportOptions) {
+    this._canvasElement = document.createElement('canvas');
     this._monoCameraController = this._isDeviceOrientationSupported ?
                                  new CameraControllerOrientation(this._monoCameraMatrix) :
                                  new CameraControllerMouse(this._monoCameraMatrix);
@@ -43,8 +109,6 @@ class WebVRViewport {
     if (!pixelRatio) {
       this._fixedPixelRatio = false;
       pixelRatio = window.devicePixelRatio || 1;
-    } else {
-      this._fixedPixelRatio = true;
     }
 
     this._pixelRatio = pixelRatio;
@@ -67,30 +131,30 @@ class WebVRViewport {
   }
 
   get leftProjectionMatrix() {
-    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
+    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get rightProjectionMatrix() {
-    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
+    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get leftViewMatrix() {
-    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
+    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get rightViewMatrix() {
-    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
+    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get leftEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : [0, 0, 0];
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : new Float32Array([0, 0, 0]);
   }
 
   get rightEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : [0, 0, 0];
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : new Float32Array([0, 0, 0]);
   }
 
-  addEventListener(key, callback) {
+  addEventListener(key: string, callback: EventHandler) {
     let listeners = this._eventListeners[key];
     let isFirst = false;
     if (!listeners) {
@@ -130,12 +194,13 @@ class WebVRViewport {
       fullscreenMethod = 'msRequestFullscreen';
     }
 
-    if (this.canvasElement[fullscreenMethod]) {
-      this.canvasElement[fullscreenMethod]();
+    const canvasElement = this.canvasElement as any;
+    if (fullscreenMethod && canvasElement[fullscreenMethod]) {
+      canvasElement[fullscreenMethod]();
     }
   }
 
-  resize(newWidth, newHeight) {
+  resize(newWidth: number, newHeight: number) {
     let width = newWidth;
     let height = newHeight;
     if (!this._fixedPixelRatio) {
@@ -183,7 +248,7 @@ class WebVRViewport {
 
   _addResizeHandler() {
     let last = 0;
-    let timer = null;
+    let timer: number|null = null;
     const delay = 100;
 
     // Throttled window resize handler
@@ -218,8 +283,8 @@ class WebVRViewport {
   }
 
   _initVrDisplay() {
-    if (navigator.getVRDisplays) {
-      navigator.getVRDisplays().then((displays) => {
+    if ((navigator as any).getVRDisplays) {
+      (navigator as any).getVRDisplays().then((displays: VRDisplay[]) => {
         if (displays.length > 0) {
           // We reuse this every frame to avoid generating garbage
           this._frameData = new VRFrameData(); // eslint-disable-line no-undef
@@ -232,7 +297,7 @@ class WebVRViewport {
     }
   }
 
-  _emitEvent(event, args) {
+  _emitEvent(event: string, args?: any) {
     if (this._eventListeners[event]) {
       for (const callback of this._eventListeners[event]) {
         callback(args);
@@ -240,7 +305,7 @@ class WebVRViewport {
     }
   }
 
-  _onFirstEventListener(key) {
+  _onFirstEventListener(key: string) {
     if (key === 'frame') {
       this._requestAnimationFrame();
     }
@@ -254,7 +319,7 @@ class WebVRViewport {
     }
   }
 
-  _onAnimationFrame(timestamp) {
+  _onAnimationFrame(timestamp: number) {
     this._requestAnimationFrame();
 
     if (this.isPresenting !== this._wasPresenting) {
@@ -294,7 +359,7 @@ class WebVRViewport {
       return false;
     }
 
-    const orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
+    const orientation = (screen as any).orientation || (screen as any).mozOrientation || screen.msOrientation;
     if (orientation) {
       if (orientation.type === 'landscape-primary' || orientation.type === 'landscape-secondary') {
         return true;
@@ -310,7 +375,7 @@ class WebVRViewport {
       return false;
     }
 
-    let quadrant = Math.round(window.orientation / 90);
+    let quadrant = Math.round(Number(window.orientation) / 90);
     while (quadrant < 0) {
       quadrant += 4;
     }
@@ -322,5 +387,3 @@ class WebVRViewport {
     return quadrant === 1 || quadrant === 3;
   }
 }
-
-export default WebVRViewport;

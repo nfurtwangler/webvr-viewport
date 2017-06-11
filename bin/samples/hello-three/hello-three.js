@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 10);
+/******/ 	return __webpack_require__(__webpack_require__.s = 18);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -175,12 +175,12 @@ THE SOFTWARE. */
 // END HEADER
 
 exports.glMatrix = __webpack_require__(0);
-exports.mat2 = __webpack_require__(15);
-exports.mat2d = __webpack_require__(16);
+exports.mat2 = __webpack_require__(12);
+exports.mat2d = __webpack_require__(13);
 exports.mat3 = __webpack_require__(3);
-exports.mat4 = __webpack_require__(17);
-exports.quat = __webpack_require__(18);
-exports.vec2 = __webpack_require__(19);
+exports.mat4 = __webpack_require__(14);
+exports.quat = __webpack_require__(15);
+exports.vec2 = __webpack_require__(16);
 exports.vec3 = __webpack_require__(4);
 exports.vec4 = __webpack_require__(5);
 
@@ -46021,579 +46021,19 @@ module.exports = vec4;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /**
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Heavily inspired by VREffect by dmarcos and mrdoob
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * https://github.com/mrdoob/three.js/
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
-
-var _three = __webpack_require__(2);
-
-var THREE = _interopRequireWildcard(_three);
-
-var _glMatrix = __webpack_require__(1);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
-var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
-var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
-
-var WebVRViewportEffect = function () {
-  function WebVRViewportEffect(renderer) {
-    _classCallCheck(this, WebVRViewportEffect);
-
-    this._leftCamera = new THREE.PerspectiveCamera();
-    this._leftCamera.layers.enable(1);
-    this._leftCamera.viewID = 0;
-
-    this._rightCamera = new THREE.PerspectiveCamera();
-    this._rightCamera.layers.enable(2);
-    this._rightCamera.viewID = 1;
-
-    this._leftEyeOffset = new THREE.Vector3();
-    this._rightEyeOffset = new THREE.Vector3();
-
-    // These are intermediate viarables used to convert from gl-matrix to THREE math types
-    this._leftCameraMatrix = _glMatrix.mat4.create();
-    this._rightCameraMatrix = _glMatrix.mat4.create();
-    this._leftViewTranslation = _glMatrix.vec3.create();
-    this._rightViewTranslation = _glMatrix.vec3.create();
-    this._leftViewRotation = _glMatrix.quat.create();
-    this._rightViewRotation = _glMatrix.quat.create();
-
-    this._renderer = renderer;
-    this._monoBounds = DEFAULT_MONO_BOUNDS;
-    this._leftBounds = DEFAULT_LEFT_BOUNDS;
-    this._rightBounds = DEFAULT_RIGHT_BOUNDS;
-  }
-
-  _createClass(WebVRViewportEffect, [{
-    key: 'resize',
-    value: function resize(params) {
-      this._renderer.setSize(params.width, params.height);
-      this._renderer.setPixelRatio(params.pixelRatio);
-    }
-  }, {
-    key: 'render',
-    value: function render(scene, viewport) {
-      var preserveAutoUpdate = scene.autoUpdate;
-      if (preserveAutoUpdate) {
-        scene.updateMatrixWorld();
-        scene.autoUpdate = false;
-      }
-
-      this._leftEyeOffset.fromArray(viewport.leftEyeOffset);
-      this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
-
-      var size = this._renderer.getSize();
-      var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
-      var leftRect = {
-        x: Math.round(size.width * leftBounds[0]),
-        y: Math.round(size.height * leftBounds[1]),
-        width: Math.round(size.width * leftBounds[2]),
-        height: Math.round(size.height * leftBounds[3])
-      };
-      var rightRect = {
-        x: Math.round(size.width * this._rightBounds[0]),
-        y: Math.round(size.height * this._rightBounds[1]),
-        width: Math.round(size.width * this._rightBounds[2]),
-        height: Math.round(size.height * this._rightBounds[3])
-      };
-
-      this._renderer.setScissorTest(true);
-
-      if (this._renderer.autoClear) {
-        this._renderer.clear();
-      }
-
-      _glMatrix.mat4.invert(this._leftCameraMatrix, viewport.leftViewMatrix);
-      _glMatrix.mat4.getTranslation(this._leftViewTranslation, this._leftCameraMatrix);
-      _glMatrix.mat4.getRotation(this._leftViewRotation, this._leftCameraMatrix);
-      this._leftCamera.position.set(this._leftViewTranslation[0], this._leftViewTranslation[1], this._leftViewTranslation[2]);
-      this._leftCamera.quaternion.set(this._leftViewRotation[0], this._leftViewRotation[1], this._leftViewRotation[2], this._leftViewRotation[3]);
-      this._leftCamera.translateOnAxis(this._leftEyeOffset, 1);
-      this._leftCamera.projectionMatrix.elements = viewport.leftProjectionMatrix;
-
-      // Prepare the scene backgrounds for each eye if ready
-      var backupScene = scene.background;
-
-      // Only allow stereo background rendering if both backgrounds have been set
-      // otherwise the user will see the background in only one eye.
-      var isStereoBackgroundReady = !!scene.backgroundLeft && !!scene.backgroundRight;
-
-      // Swap in our left eye background if both backgrounds are ready
-      if (isStereoBackgroundReady) {
-        scene.background = scene.backgroundLeft;
-      }
-
-      // Set up the left eye viewport and scissor
-      this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-      this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
-
-      // Always render left eye even if we are in mono
-      this._renderer.render(scene, this._leftCamera);
-
-      if (viewport.isPresenting) {
-        // The right eye will only render if we are presenting
-        _glMatrix.mat4.invert(this._rightCameraMatrix, viewport.rightViewMatrix);
-        _glMatrix.mat4.getTranslation(this._rightViewTranslation, this._rightCameraMatrix);
-        _glMatrix.mat4.getRotation(this._rightViewRotation, this._rightCameraMatrix);
-        this._rightCamera.position.set(this._rightViewTranslation[0], this._rightViewTranslation[1], this._rightViewTranslation[2]);
-        this._rightCamera.quaternion.set(this._rightViewRotation[0], this._rightViewRotation[1], this._rightViewRotation[2], this._rightViewRotation[3]);
-        this._rightCamera.translateOnAxis(this._rightEyeOffset, 1);
-        this._rightCamera.projectionMatrix.elements = viewport.rightProjectionMatrix;
-
-        // Swap in our right eye background if both backgrounds are ready
-        if (isStereoBackgroundReady) {
-          scene.background = scene.backgroundRight;
-        }
-
-        // Set up the right eye viewport and scissor then render the right eye
-        this._renderer.setViewport(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
-        this._renderer.setScissor(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
-        this._renderer.render(scene, this._rightCamera);
-      }
-
-      // Reset the previous background
-      scene.background = backupScene;
-
-      // Reset viewport
-      this._renderer.setViewport(0, 0, size.width, size.height);
-      this._renderer.setScissorTest(false);
-
-      // Restores the scene's autoupdate property
-      if (preserveAutoUpdate) {
-        scene.autoUpdate = true;
-      }
-    }
-  }]);
-
-  return WebVRViewportEffect;
-}();
-
-exports.default = WebVRViewportEffect;
+module.exports = __webpack_require__.p + "1cbe5d588671425f3a279b293c5d573e.png";
 
 /***/ }),
 /* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _glMatrix = __webpack_require__(1);
-
-var _cameraControllerMouse = __webpack_require__(11);
-
-var _cameraControllerMouse2 = _interopRequireDefault(_cameraControllerMouse);
-
-var _cameraControllerOrientation = __webpack_require__(12);
-
-var _cameraControllerOrientation2 = _interopRequireDefault(_cameraControllerOrientation);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var WebVRViewport = function () {
-  function WebVRViewport(options) {
-    _classCallCheck(this, WebVRViewport);
-
-    this._canvasElement = document.createElement('canvas');
-    this._eventListeners = {};
-    this._animationFrameHandler = this._onAnimationFrame.bind(this);
-
-    this._monoProjectionMatrix = _glMatrix.mat4.create();
-    this._monoCameraMatrix = _glMatrix.mat4.create();
-    this._monoViewMatrix = _glMatrix.mat4.create();
-    this._monoRotationQuat = _glMatrix.quat.create();
-    this._monoCameraController = this._isDeviceOrientationSupported ? new _cameraControllerOrientation2.default(this._monoCameraMatrix) : new _cameraControllerMouse2.default(this._monoCameraMatrix);
-    this._monoCameraController.connect(this._canvasElement);
-
-    this._parentElement = options.parentElement || document.body;
-    this._parentElement.appendChild(this._canvasElement);
-
-    var width = options.width;
-    var height = options.height;
-    var pixelRatio = options.pixelRatio;
-    var fixedSize = true;
-    if (!width) {
-      if (this._parentElement === document.body) {
-        fixedSize = false;
-        width = window.innerWidth;
-      } else {
-        width = this._parentElement.clientWidth;
-      }
-    }
-    if (!height) {
-      if (this._parentElement === document.body) {
-        fixedSize = false;
-        height = window.innerHeight;
-      } else {
-        height = this._parentElement.clientHeight;
-      }
-    }
-    if (!pixelRatio) {
-      this._fixedPixelRatio = false;
-      pixelRatio = window.devicePixelRatio || 1;
-    } else {
-      this._fixedPixelRatio = true;
-    }
-
-    this._pixelRatio = pixelRatio;
-    this.resize(width, height);
-
-    if (!fixedSize && this._parentElement === document.body) {
-      this._addResizeHandler();
-    }
-
-    this._initVrDisplay();
-    this._wasPresenting = this.isPresenting;
-  }
-
-  _createClass(WebVRViewport, [{
-    key: 'addEventListener',
-    value: function addEventListener(key, callback) {
-      var listeners = this._eventListeners[key];
-      var isFirst = false;
-      if (!listeners) {
-        listeners = [];
-        this._eventListeners[key] = listeners;
-        isFirst = true;
-      }
-
-      if (listeners.indexOf(callback) < 0) {
-        listeners.push(callback);
-      }
-
-      if (isFirst) {
-        this._onFirstEventListener(key);
-      }
-    }
-  }, {
-    key: 'enterVR',
-    value: function enterVR() {
-      if (this._vrDisplay) {
-        this._vrDisplay.requestPresent([{ source: this._canvasElement }]).then(function () {
-          console.log('webvr-viewport enterVR - Finished');
-        }).catch(function (err) {
-          console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
-        });
-      }
-    }
-  }, {
-    key: 'enterFullscreen',
-    value: function enterFullscreen() {
-      var fullscreenMethod = null;
-      if ('requestFullscreen' in Element.prototype) {
-        fullscreenMethod = 'requestFullscreen';
-      } else if ('webkitRequestFullscreen' in Element.prototype) {
-        fullscreenMethod = 'webkitRequestFullscreen';
-      } else if ('mozRequestFullScreen' in Element.prototype) {
-        fullscreenMethod = 'mozRequestFullScreen';
-      } else if ('msRequestFullscreen' in Element.prototype) {
-        fullscreenMethod = 'msRequestFullscreen';
-      }
-
-      if (this.canvasElement[fullscreenMethod]) {
-        this.canvasElement[fullscreenMethod]();
-      }
-    }
-  }, {
-    key: 'resize',
-    value: function resize(newWidth, newHeight) {
-      var width = newWidth;
-      var height = newHeight;
-      if (!this._fixedPixelRatio) {
-        this._pixelRatio = window.devicePixelRatio || 1;
-      }
-      var pixelRatio = this._pixelRatio;
-
-      var fov = void 0;
-      if (this._isMobileInLandscapeOrientation) {
-        // clamp the range of fov
-        fov = Math.max(30, Math.min(70, 60 / (width / height)));
-      } else {
-        fov = 60;
-      }
-
-      var aspect = width / height;
-
-      if (this.isPresenting) {
-        var leftEye = this._vrDisplay.getEyeParameters('left');
-        var rightEye = this._vrDisplay.getEyeParameters('right');
-
-        // For simplicity we will render each eye at the same resolution
-        width = Math.max(leftEye.renderWidth, rightEye.renderWidth);
-        height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
-        fov = 60; // Should come from VRDisplay?
-        pixelRatio = 1;
-        aspect = 1;
-      }
-
-      this._canvasElement.width = width * pixelRatio * (this.isPresenting ? 2 : 1);
-      this._canvasElement.height = height * pixelRatio;
-
-      _glMatrix.mat4.perspective(this._monoProjectionMatrix, fov * Math.PI / 180, aspect, 0.01, 10000.0);
-
-      this._monoCameraController.resize(width, height, fov, aspect);
-
-      this._emitEvent('resize', {
-        width: width,
-        height: height,
-        fov: fov,
-        aspect: aspect,
-        pixelRatio: pixelRatio
-      });
-    }
-  }, {
-    key: '_addResizeHandler',
-    value: function _addResizeHandler() {
-      var _this = this;
-
-      var last = 0;
-      var timer = null;
-      var delay = 100;
-
-      // Throttled window resize handler
-      this._resizeHandler = function () {
-        if (_this.isPresenting) {
-          return;
-        }
-
-        var now = Date.now();
-
-        if (!last) {
-          last = now;
-        }
-
-        if (timer) {
-          clearTimeout(timer);
-        }
-
-        if (now > last + delay) {
-          last = now;
-          _this.resize(window.innerWidth, window.innerHeight);
-          return;
-        }
-
-        timer = setTimeout(function () {
-          last = now;
-          _this.resize(window.innerWidth, window.innerHeight);
-        }, delay);
-      };
-
-      window.addEventListener('resize', this._resizeHandler);
-    }
-  }, {
-    key: '_initVrDisplay',
-    value: function _initVrDisplay() {
-      var _this2 = this;
-
-      if (navigator.getVRDisplays) {
-        navigator.getVRDisplays().then(function (displays) {
-          if (displays.length > 0) {
-            // We reuse this every frame to avoid generating garbage
-            _this2._frameData = new VRFrameData(); // eslint-disable-line no-undef
-            _this2._vrDisplay = displays[0];
-            _this2._emitEvent('vrdisplayactivate');
-
-            // TODO: hook vrdisplay events on window in case it disconnects or is connected later
-          }
-        });
-      }
-    }
-  }, {
-    key: '_emitEvent',
-    value: function _emitEvent(event, args) {
-      if (this._eventListeners[event]) {
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-          for (var _iterator = this._eventListeners[event][Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var callback = _step.value;
-
-            callback(args);
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-              _iterator.return();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
-        }
-      }
-    }
-  }, {
-    key: '_onFirstEventListener',
-    value: function _onFirstEventListener(key) {
-      if (key === 'frame') {
-        this._requestAnimationFrame();
-      }
-    }
-  }, {
-    key: '_requestAnimationFrame',
-    value: function _requestAnimationFrame() {
-      if (this._vrDisplay) {
-        this._vrDisplay.requestAnimationFrame(this._animationFrameHandler);
-      } else {
-        window.requestAnimationFrame(this._animationFrameHandler);
-      }
-    }
-  }, {
-    key: '_onAnimationFrame',
-    value: function _onAnimationFrame(timestamp) {
-      this._requestAnimationFrame();
-
-      if (this.isPresenting !== this._wasPresenting) {
-        this._wasPresenting = this.isPresenting;
-        this.resize(this._width, this._height);
-      }
-
-      if (this.isPresenting) {
-        this._vrDisplay.getFrameData(this._frameData);
-      } else {
-        // Update the mono camera and save the rotation quaternion
-        this._monoCameraController.update();
-        _glMatrix.mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
-      }
-
-      this._emitEvent('frame', timestamp);
-
-      if (this.isPresenting) {
-        this._vrDisplay.submitFrame();
-      }
-    }
-  }, {
-    key: 'canvasElement',
-    get: function get() {
-      return this._canvasElement;
-    }
-  }, {
-    key: 'isPresenting',
-    get: function get() {
-      return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
-    }
-  }, {
-    key: 'leftProjectionMatrix',
-    get: function get() {
-      return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
-    }
-  }, {
-    key: 'rightProjectionMatrix',
-    get: function get() {
-      return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
-    }
-  }, {
-    key: 'leftViewMatrix',
-    get: function get() {
-      return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
-    }
-  }, {
-    key: 'rightViewMatrix',
-    get: function get() {
-      return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
-    }
-  }, {
-    key: 'leftEyeOffset',
-    get: function get() {
-      return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : [0, 0, 0];
-    }
-  }, {
-    key: 'rightEyeOffset',
-    get: function get() {
-      return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : [0, 0, 0];
-    }
-  }, {
-    key: '_isMobile',
-    get: function get() {
-      return (/Mobi/i.test(navigator.userAgent)
-      );
-    }
-  }, {
-    key: '_isDeviceOrientationSupported',
-    get: function get() {
-      return 'DeviceOrientationEvent' in window && this._isMobile && !/OculusBrowser/i.test(navigator.userAgent);
-    }
-  }, {
-    key: '_isMobileInLandscapeOrientation',
-    get: function get() {
-      if (!this._isMobile) {
-        return false;
-      }
-
-      var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
-      if (orientation) {
-        if (orientation.type === 'landscape-primary' || orientation.type === 'landscape-secondary') {
-          return true;
-        } else if (orientation.type === 'portrait-secondary' || orientation.type === 'portrait-primary') {
-          return false;
-        }
-      }
-
-      // fall back to window.orientation
-      if (!window.orientation) {
-        return false;
-      }
-
-      var quadrant = Math.round(window.orientation / 90);
-      while (quadrant < 0) {
-        quadrant += 4;
-      }
-
-      while (quadrant >= 4) {
-        quadrant -= 4;
-      }
-
-      return quadrant === 1 || quadrant === 3;
-    }
-  }]);
-
-  return WebVRViewport;
-}();
-
-exports.default = WebVRViewport;
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = __webpack_require__.p + "1cbe5d588671425f3a279b293c5d573e.png";
-
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(13);
+var content = __webpack_require__(10);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(20)(content, {});
+var update = __webpack_require__(17)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -46610,348 +46050,452 @@ if(false) {
 }
 
 /***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+ * Heavily inspired by VREffect by dmarcos and mrdoob
+ * https://github.com/mrdoob/three.js/
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+var THREE = __webpack_require__(2);
+var gl_matrix_1 = __webpack_require__(1);
+var DEFAULT_MONO_BOUNDS = [0.0, 0.0, 1.0, 1.0];
+var DEFAULT_LEFT_BOUNDS = [0.0, 0.0, 0.5, 1.0];
+var DEFAULT_RIGHT_BOUNDS = [0.5, 0.0, 0.5, 1.0];
+var WebVRViewportEffect = (function () {
+    function WebVRViewportEffect(renderer) {
+        this._leftCamera = new THREE.PerspectiveCamera();
+        this._rightCamera = new THREE.PerspectiveCamera();
+        this._leftEyeOffset = new THREE.Vector3();
+        this._rightEyeOffset = new THREE.Vector3();
+        this._leftCameraMatrix = gl_matrix_1.mat4.create();
+        this._rightCameraMatrix = gl_matrix_1.mat4.create();
+        this._leftViewTranslation = gl_matrix_1.vec3.create();
+        this._rightViewTranslation = gl_matrix_1.vec3.create();
+        this._leftViewRotation = gl_matrix_1.quat.create();
+        this._rightViewRotation = gl_matrix_1.quat.create();
+        this._monoBounds = DEFAULT_MONO_BOUNDS;
+        this._leftBounds = DEFAULT_LEFT_BOUNDS;
+        this._rightBounds = DEFAULT_RIGHT_BOUNDS;
+        this._renderer = renderer;
+        this._leftCamera.layers.enable(1);
+        this._rightCamera.layers.enable(2);
+    }
+    WebVRViewportEffect.prototype.resize = function (params) {
+        this._renderer.setSize(params.width, params.height);
+        this._renderer.setPixelRatio(params.pixelRatio);
+    };
+    WebVRViewportEffect.prototype.render = function (scene, viewport) {
+        var preserveAutoUpdate = scene.autoUpdate;
+        if (preserveAutoUpdate) {
+            scene.updateMatrixWorld(false);
+            scene.autoUpdate = false;
+        }
+        this._leftEyeOffset.fromArray(viewport.leftEyeOffset);
+        this._rightEyeOffset.fromArray(viewport.rightEyeOffset);
+        var size = this._renderer.getSize();
+        var leftBounds = viewport.isPresenting ? this._leftBounds : this._monoBounds;
+        var leftRect = {
+            x: Math.round(size.width * leftBounds[0]),
+            y: Math.round(size.height * leftBounds[1]),
+            width: Math.round(size.width * leftBounds[2]),
+            height: Math.round(size.height * leftBounds[3]),
+        };
+        var rightRect = {
+            x: Math.round(size.width * this._rightBounds[0]),
+            y: Math.round(size.height * this._rightBounds[1]),
+            width: Math.round(size.width * this._rightBounds[2]),
+            height: Math.round(size.height * this._rightBounds[3]),
+        };
+        this._renderer.setScissorTest(true);
+        if (this._renderer.autoClear) {
+            this._renderer.clear();
+        }
+        gl_matrix_1.mat4.invert(this._leftCameraMatrix, viewport.leftViewMatrix);
+        gl_matrix_1.mat4.getTranslation(this._leftViewTranslation, this._leftCameraMatrix);
+        gl_matrix_1.mat4.getRotation(this._leftViewRotation, this._leftCameraMatrix);
+        this._leftCamera.position.set(this._leftViewTranslation[0], this._leftViewTranslation[1], this._leftViewTranslation[2]);
+        this._leftCamera.quaternion.set(this._leftViewRotation[0], this._leftViewRotation[1], this._leftViewRotation[2], this._leftViewRotation[3]);
+        this._leftCamera.translateOnAxis(this._leftEyeOffset, 1);
+        this._leftCamera.projectionMatrix.elements = viewport.leftProjectionMatrix;
+        // Prepare the scene backgrounds for each eye if ready
+        var backupScene = scene.background;
+        // Set up the left eye viewport and scissor
+        this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+        this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
+        // Always render left eye even if we are in mono
+        this._renderer.render(scene, this._leftCamera);
+        if (viewport.isPresenting) {
+            // The right eye will only render if we are presenting
+            gl_matrix_1.mat4.invert(this._rightCameraMatrix, viewport.rightViewMatrix);
+            gl_matrix_1.mat4.getTranslation(this._rightViewTranslation, this._rightCameraMatrix);
+            gl_matrix_1.mat4.getRotation(this._rightViewRotation, this._rightCameraMatrix);
+            this._rightCamera.position.set(this._rightViewTranslation[0], this._rightViewTranslation[1], this._rightViewTranslation[2]);
+            this._rightCamera.quaternion.set(this._rightViewRotation[0], this._rightViewRotation[1], this._rightViewRotation[2], this._rightViewRotation[3]);
+            this._rightCamera.translateOnAxis(this._rightEyeOffset, 1);
+            this._rightCamera.projectionMatrix.elements = viewport.rightProjectionMatrix;
+            // Set up the right eye viewport and scissor then render the right eye
+            this._renderer.setViewport(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
+            this._renderer.setScissor(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
+            this._renderer.render(scene, this._rightCamera);
+        }
+        // Reset the previous background
+        scene.background = backupScene;
+        // Reset viewport
+        this._renderer.setViewport(0, 0, size.width, size.height);
+        this._renderer.setScissorTest(false);
+        // Restores the scene's autoupdate property
+        if (preserveAutoUpdate) {
+            scene.autoUpdate = true;
+        }
+    };
+    return WebVRViewportEffect;
+}());
+exports.default = WebVRViewportEffect;
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var gl_matrix_1 = __webpack_require__(1);
+var camera_controller_mouse_1 = __webpack_require__(19);
+var camera_controller_orientation_1 = __webpack_require__(20);
+var WebVRViewport = (function () {
+    function WebVRViewport(options) {
+        this._eventListeners = {};
+        this._animationFrameHandler = this._onAnimationFrame.bind(this);
+        this._monoProjectionMatrix = gl_matrix_1.mat4.create();
+        this._monoCameraMatrix = gl_matrix_1.mat4.create();
+        this._monoViewMatrix = gl_matrix_1.mat4.create();
+        this._monoRotationQuat = gl_matrix_1.quat.create();
+        this._fixedPixelRatio = true;
+        this._pixelRatio = 1;
+        this._wasPresenting = false;
+        this._canvasElement = document.createElement('canvas');
+        this._monoCameraController = this._isDeviceOrientationSupported ?
+            new camera_controller_orientation_1.default(this._monoCameraMatrix) :
+            new camera_controller_mouse_1.default(this._monoCameraMatrix);
+        this._monoCameraController.connect(this._canvasElement);
+        this._parentElement = options.parentElement || document.body;
+        this._parentElement.appendChild(this._canvasElement);
+        var width = options.width;
+        var height = options.height;
+        var pixelRatio = options.pixelRatio;
+        var fixedSize = true;
+        if (!width) {
+            if (this._parentElement === document.body) {
+                fixedSize = false;
+                width = window.innerWidth;
+            }
+            else {
+                width = this._parentElement.clientWidth;
+            }
+        }
+        if (!height) {
+            if (this._parentElement === document.body) {
+                fixedSize = false;
+                height = window.innerHeight;
+            }
+            else {
+                height = this._parentElement.clientHeight;
+            }
+        }
+        if (!pixelRatio) {
+            this._fixedPixelRatio = false;
+            pixelRatio = window.devicePixelRatio || 1;
+        }
+        this._pixelRatio = pixelRatio;
+        this.resize(width, height);
+        if (!fixedSize && this._parentElement === document.body) {
+            this._addResizeHandler();
+        }
+        this._initVrDisplay();
+        this._wasPresenting = this.isPresenting;
+    }
+    Object.defineProperty(WebVRViewport.prototype, "canvasElement", {
+        get: function () {
+            return this._canvasElement;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "isPresenting", {
+        get: function () {
+            return this._vrDisplay !== undefined && this._vrDisplay.isPresenting;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "leftProjectionMatrix", {
+        get: function () {
+            return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "rightProjectionMatrix", {
+        get: function () {
+            return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "leftViewMatrix", {
+        get: function () {
+            return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "rightViewMatrix", {
+        get: function () {
+            return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "leftEyeOffset", {
+        get: function () {
+            return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : new Float32Array([0, 0, 0]);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "rightEyeOffset", {
+        get: function () {
+            return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : new Float32Array([0, 0, 0]);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    WebVRViewport.prototype.addEventListener = function (key, callback) {
+        var listeners = this._eventListeners[key];
+        var isFirst = false;
+        if (!listeners) {
+            listeners = [];
+            this._eventListeners[key] = listeners;
+            isFirst = true;
+        }
+        if (listeners.indexOf(callback) < 0) {
+            listeners.push(callback);
+        }
+        if (isFirst) {
+            this._onFirstEventListener(key);
+        }
+    };
+    WebVRViewport.prototype.enterVR = function () {
+        if (this._vrDisplay) {
+            this._vrDisplay.requestPresent([{ source: this._canvasElement }]).then(function () {
+                console.log('webvr-viewport enterVR - Finished');
+            }).catch(function (err) {
+                console.log('webvr-viewport enterVR - ERROR:  ' + JSON.stringify(err));
+            });
+        }
+    };
+    WebVRViewport.prototype.enterFullscreen = function () {
+        var fullscreenMethod = null;
+        if ('requestFullscreen' in Element.prototype) {
+            fullscreenMethod = 'requestFullscreen';
+        }
+        else if ('webkitRequestFullscreen' in Element.prototype) {
+            fullscreenMethod = 'webkitRequestFullscreen';
+        }
+        else if ('mozRequestFullScreen' in Element.prototype) {
+            fullscreenMethod = 'mozRequestFullScreen';
+        }
+        else if ('msRequestFullscreen' in Element.prototype) {
+            fullscreenMethod = 'msRequestFullscreen';
+        }
+        var canvasElement = this.canvasElement;
+        if (fullscreenMethod && canvasElement[fullscreenMethod]) {
+            canvasElement[fullscreenMethod]();
+        }
+    };
+    WebVRViewport.prototype.resize = function (newWidth, newHeight) {
+        var width = newWidth;
+        var height = newHeight;
+        if (!this._fixedPixelRatio) {
+            this._pixelRatio = window.devicePixelRatio || 1;
+        }
+        var pixelRatio = this._pixelRatio;
+        var fov;
+        if (this._isMobileInLandscapeOrientation) {
+            // clamp the range of fov
+            fov = Math.max(30, Math.min(70, 60 / (width / height)));
+        }
+        else {
+            fov = 60;
+        }
+        var aspect = width / height;
+        if (this.isPresenting) {
+            var leftEye = this._vrDisplay.getEyeParameters('left');
+            var rightEye = this._vrDisplay.getEyeParameters('right');
+            // For simplicity we will render each eye at the same resolution
+            width = Math.max(leftEye.renderWidth, rightEye.renderWidth);
+            height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+            fov = 60; // Should come from VRDisplay?
+            pixelRatio = 1;
+            aspect = 1;
+        }
+        this._canvasElement.width = width * pixelRatio * (this.isPresenting ? 2 : 1);
+        this._canvasElement.height = height * pixelRatio;
+        gl_matrix_1.mat4.perspective(this._monoProjectionMatrix, (fov * Math.PI) / 180, aspect, 0.01, 10000.0);
+        this._monoCameraController.resize(width, height, fov, aspect);
+        this._emitEvent('resize', {
+            width: width,
+            height: height,
+            fov: fov,
+            aspect: aspect,
+            pixelRatio: pixelRatio,
+        });
+    };
+    WebVRViewport.prototype._addResizeHandler = function () {
+        var _this = this;
+        var last = 0;
+        var timer = null;
+        var delay = 100;
+        // Throttled window resize handler
+        this._resizeHandler = function () {
+            if (_this.isPresenting) {
+                return;
+            }
+            var now = Date.now();
+            if (!last) {
+                last = now;
+            }
+            if (timer) {
+                clearTimeout(timer);
+            }
+            if (now > last + delay) {
+                last = now;
+                _this.resize(window.innerWidth, window.innerHeight);
+                return;
+            }
+            timer = setTimeout(function () {
+                last = now;
+                _this.resize(window.innerWidth, window.innerHeight);
+            }, delay);
+        };
+        window.addEventListener('resize', this._resizeHandler);
+    };
+    WebVRViewport.prototype._initVrDisplay = function () {
+        var _this = this;
+        if (navigator.getVRDisplays) {
+            navigator.getVRDisplays().then(function (displays) {
+                if (displays.length > 0) {
+                    // We reuse this every frame to avoid generating garbage
+                    _this._frameData = new VRFrameData(); // eslint-disable-line no-undef
+                    _this._vrDisplay = displays[0];
+                    _this._emitEvent('vrdisplayactivate');
+                    // TODO: hook vrdisplay events on window in case it disconnects or is connected later
+                }
+            });
+        }
+    };
+    WebVRViewport.prototype._emitEvent = function (event, args) {
+        if (this._eventListeners[event]) {
+            for (var _i = 0, _a = this._eventListeners[event]; _i < _a.length; _i++) {
+                var callback = _a[_i];
+                callback(args);
+            }
+        }
+    };
+    WebVRViewport.prototype._onFirstEventListener = function (key) {
+        if (key === 'frame') {
+            this._requestAnimationFrame();
+        }
+    };
+    WebVRViewport.prototype._requestAnimationFrame = function () {
+        if (this._vrDisplay) {
+            this._vrDisplay.requestAnimationFrame(this._animationFrameHandler);
+        }
+        else {
+            window.requestAnimationFrame(this._animationFrameHandler);
+        }
+    };
+    WebVRViewport.prototype._onAnimationFrame = function (timestamp) {
+        this._requestAnimationFrame();
+        if (this.isPresenting !== this._wasPresenting) {
+            this._wasPresenting = this.isPresenting;
+            this.resize(this._width, this._height);
+        }
+        if (this.isPresenting) {
+            this._vrDisplay.getFrameData(this._frameData);
+        }
+        else {
+            // Update the mono camera and save the rotation quaternion
+            this._monoCameraController.update();
+            gl_matrix_1.mat4.invert(this._monoViewMatrix, this._monoCameraMatrix);
+        }
+        this._emitEvent('frame', timestamp);
+        if (this.isPresenting) {
+            this._vrDisplay.submitFrame();
+        }
+    };
+    Object.defineProperty(WebVRViewport.prototype, "_isMobile", {
+        get: function () {
+            return /Mobi/i.test(navigator.userAgent);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "_isDeviceOrientationSupported", {
+        get: function () {
+            return ('DeviceOrientationEvent' in window &&
+                this._isMobile &&
+                !/OculusBrowser/i.test(navigator.userAgent));
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(WebVRViewport.prototype, "_isMobileInLandscapeOrientation", {
+        get: function () {
+            if (!this._isMobile) {
+                return false;
+            }
+            var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation;
+            if (orientation) {
+                if (orientation.type === 'landscape-primary' || orientation.type === 'landscape-secondary') {
+                    return true;
+                }
+                else if (orientation.type === 'portrait-secondary' ||
+                    orientation.type === 'portrait-primary') {
+                    return false;
+                }
+            }
+            // fall back to window.orientation
+            if (!window.orientation) {
+                return false;
+            }
+            var quadrant = Math.round(Number(window.orientation) / 90);
+            while (quadrant < 0) {
+                quadrant += 4;
+            }
+            while (quadrant >= 4) {
+                quadrant -= 4;
+            }
+            return quadrant === 1 || quadrant === 3;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return WebVRViewport;
+}());
+exports.WebVRViewport = WebVRViewport;
+
+
+/***/ }),
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _three = __webpack_require__(2);
-
-var THREE = _interopRequireWildcard(_three);
-
-var _webvrViewport = __webpack_require__(7);
-
-var _webvrViewport2 = _interopRequireDefault(_webvrViewport);
-
-var _webvrViewportEffect = __webpack_require__(6);
-
-var _webvrViewportEffect2 = _interopRequireDefault(_webvrViewportEffect);
-
-var _cubeSea = __webpack_require__(8);
-
-var _cubeSea2 = _interopRequireDefault(_cubeSea);
-
-__webpack_require__(9);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var HelloThreeSample = function () {
-  function HelloThreeSample() {
-    var _this = this;
-
-    _classCallCheck(this, HelloThreeSample);
-
-    // WebVRViewport used for controlling the view and entering VR
-    this._viewport = new _webvrViewport2.default({
-      // Default options
-    });
-
-    // Three.js Objects
-    this._scene = new THREE.Scene();
-    this._renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      canvas: this._viewport.canvasElement
-    });
-    this._renderer.setClearColor('#000000');
-
-    // This effect adapts the WebVRViewport output to control a Three.js Camera
-    this._effect = new _webvrViewportEffect2.default(this._renderer);
-
-    // Set initial Size and listen for changes
-    this.resize({
-      width: window.innerWidth,
-      height: window.innerHeight,
-      fov: 60,
-      aspect: window.innerWidth / window.innerHeight,
-      pixelRatio: window.devicePixelRatio
-    });
-    this._viewport.addEventListener('resize', this.resize.bind(this));
-
-    // Overlay UI hooks
-    document.querySelector('#canvas-container').appendChild(this._viewport.canvasElement);
-    var enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
-    enterFullscreenButton.addEventListener('click', function () {
-      _this._viewport.enterFullscreen();
-    });
-
-    var enterVRButton = document.querySelector('#enter-vr-button');
-    enterVRButton.addEventListener('click', function () {
-      _this._viewport.enterVR();
-    });
-    this._viewport.addEventListener('vrdisplayactivate', function () {
-      enterVRButton.classList.remove('hidden');
-    });
-  }
-
-  _createClass(HelloThreeSample, [{
-    key: 'load',
-    value: function load() {
-      var loader = new THREE.TextureLoader();
-
-      // Floating WebVR logo
-      var cubeFaceGeo = new THREE.PlaneGeometry(0.4, 0.4);
-      var cubeFaceMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + _cubeSea2.default) });
-      this._cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
-      this._cubeFace.position.setZ(-1);
-      this._scene.add(this._cubeFace);
-
-      // Kick off rendering
-      this._viewport.addEventListener('frame', this.render.bind(this));
-    }
-  }, {
-    key: 'resize',
-    value: function resize(params) {
-      this._effect.resize(params);
-    }
-  }, {
-    key: 'render',
-    value: function render(timestamp) {
-      // Animate the z location of the quad based on the current frame timestamp
-      var oscillationSpeed = Math.PI / 2;
-      var z = -1 + Math.cos(oscillationSpeed * timestamp / 1000);
-      this._cubeFace.position.set(0, 0, z - 1);
-
-      this._effect.render(this._scene, this._viewport);
-    }
-  }]);
-
-  return HelloThreeSample;
-}();
-
-document.addEventListener('DOMContentLoaded', function () {
-  // Stash on global for better debugging
-  window.sample = new HelloThreeSample();
-
-  // Kick off loading and rendering
-  window.sample.load();
-});
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); // This is heavily influenced by the OVRUI controls for ReactVR
-// https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/MousePanControls.js
-
-var _glMatrix = __webpack_require__(1);
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var CameraControllerMouse = function () {
-  function CameraControllerMouse(viewMatrix) {
-    _classCallCheck(this, CameraControllerMouse);
-
-    this._viewMatrix = viewMatrix;
-    this._yUnit = _glMatrix.vec3.fromValues(0, 1, 0);
-    this._width = 0;
-    this._height = 0;
-    this._fov = 0;
-    this._yaw = 0;
-    this._pitch = 0;
-    this._dragging = false;
-    this._lastX = 0;
-    this._lastY = 0;
-    this._mouseDownHandler = this._onMouseDown.bind(this);
-    this._mouseUpHandler = this._onMouseUp.bind(this);
-    this._mouseMoveHandler = this._onMouseMove.bind(this);
-  }
-
-  _createClass(CameraControllerMouse, [{
-    key: 'connect',
-    value: function connect(target) {
-      this._target = target || window;
-      this._target.addEventListener('mousedown', this._mouseDownHandler);
-      this._target.addEventListener('mousemove', this._mouseMoveHandler);
-      this._target.addEventListener('mouseup', this._mouseUpHandler);
-    }
-  }, {
-    key: 'disconnect',
-    value: function disconnect() {
-      this._target.removeEventListener('mousedown', this._mouseDownHandler);
-      this._target.removeEventListener('mousemove', this._mouseMoveHandler);
-      this._target.removeEventListener('mouseup', this._mouseUpHandler);
-    }
-  }, {
-    key: 'update',
-    value: function update() {
-      _glMatrix.mat4.fromRotation(this._viewMatrix, this._yaw, this._yUnit);
-      _glMatrix.mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch);
-    }
-  }, {
-    key: 'resize',
-    value: function resize(width, height, fov, aspect) {
-      this._width = width;
-      this._height = height;
-      this._fov = fov;
-      this._aspect = aspect;
-    }
-  }, {
-    key: '_onMouseDown',
-    value: function _onMouseDown(e) {
-      this._dragging = true;
-      this._lastX = e.screenX;
-      this._lastY = e.screenY;
-    }
-  }, {
-    key: '_onMouseUp',
-    value: function _onMouseUp() {
-      this._dragging = false;
-    }
-  }, {
-    key: '_onMouseMove',
-    value: function _onMouseMove(e) {
-      if (!this._dragging) {
-        return;
-      }
-
-      var deltaX = e.screenX - this._lastX;
-      var deltaY = e.screenY - this._lastY;
-      this._yaw += deltaX / this._width * this._fov * this._aspect * (Math.PI / 180);
-      this._pitch += deltaY / (this._height * this._fov * (Math.PI / 180));
-      this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
-
-      this._lastX = e.screenX;
-      this._lastY = e.screenY;
-    }
-  }]);
-
-  return CameraControllerMouse;
-}();
-
-exports.default = CameraControllerMouse;
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); // This is heavily influenced by the OVRUI controls for ReactVR
-// https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/DeviceOrientationControls.js
-
-var _glMatrix = __webpack_require__(1);
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var CameraControllerOrientation = function () {
-  function CameraControllerOrientation(cameraMatrix) {
-    _classCallCheck(this, CameraControllerOrientation);
-
-    this._cameraMatrix = cameraMatrix;
-    this._cameraRotationQuat = _glMatrix.quat.create();
-    this._initialRotationQuat = _glMatrix.quat.create();
-
-    // -Pi/2 rotation around the X-axis
-    this._screenQuat = _glMatrix.quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
-    this._yUnit = _glMatrix.vec3.fromValues(0, 1, 0);
-    this._zUnit = _glMatrix.vec3.fromValues(0, 0, 1);
-
-    this._initialAlpha = null;
-    this._deviceOrientation = {};
-    this._orientationChangeHandler = this._onOrientationChange.bind(this);
-    this._deviceOrientationHandler = this._onDeviceOrientation.bind(this);
-  }
-
-  _createClass(CameraControllerOrientation, [{
-    key: 'connect',
-    value: function connect(target) {
-      this._target = target || window;
-      this._screenOrientation = this._getScreenOrientation();
-      window.addEventListener('orientationchange', this._orientationChangeHandler);
-      window.addEventListener('deviceorientation', this._deviceOrientationHandler);
-    }
-  }, {
-    key: 'disconnect',
-    value: function disconnect() {
-      window.removeEventListener('orientationchange', this._orientationChangeHandler);
-      window.removeEventListener('deviceorientation', this._deviceOrientationHandler);
-    }
-  }, {
-    key: 'update',
-    value: function update() {
-      var alpha = this._deviceOrientation.alpha || 0;
-      var beta = this._deviceOrientation.beta || 0;
-      var gamma = this._deviceOrientation.gamma || 0;
-
-      var orient = this._screenOrientation;
-
-      _glMatrix.quat.identity(this._cameraRotationQuat);
-      _glMatrix.quat.rotateY(this._cameraRotationQuat, this._cameraRotationQuat, alpha);
-      _glMatrix.quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
-      _glMatrix.quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
-
-      if (this._initialAlpha !== null) {
-        _glMatrix.quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
-        _glMatrix.quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
-      }
-
-      _glMatrix.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._screenQuat);
-      _glMatrix.quat.setAxisAngle(this._initialRotationQuat, this._zUnit, -orient);
-
-      _glMatrix.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._initialRotationQuat);
-      _glMatrix.mat4.fromQuat(this._cameraMatrix, this._cameraRotationQuat);
-    }
-  }, {
-    key: 'resize',
-    value: function resize() {
-      // Nothing to do
-    }
-  }, {
-    key: '_onOrientationChange',
-    value: function _onOrientationChange() {
-      this._screenOrientation = this._getScreenOrientation();
-    }
-  }, {
-    key: '_onDeviceOrientation',
-    value: function _onDeviceOrientation(e) {
-      var alpha = _glMatrix.glMatrix.toRadian(e.alpha);
-      var beta = _glMatrix.glMatrix.toRadian(e.beta);
-      var gamma = _glMatrix.glMatrix.toRadian(e.gamma);
-      if (this._initialAlpha === null) {
-        this._initialAlpha = alpha - this._getScreenOrientation();
-      }
-      this._deviceOrientation.alpha = alpha;
-      this._deviceOrientation.beta = beta;
-      this._deviceOrientation.gamma = gamma;
-    }
-  }, {
-    key: '_getScreenOrientation',
-    value: function _getScreenOrientation() {
-      var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation || {};
-      var angle = orientation.angle || window.orientation || 0;
-      return _glMatrix.glMatrix.toRadian(angle);
-    }
-  }]);
-
-  return CameraControllerOrientation;
-}();
-
-exports.default = CameraControllerOrientation;
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(14)();
+exports = module.exports = __webpack_require__(11)();
 // imports
 
 
@@ -46962,7 +46506,7 @@ exports.push([module.i, "body {\n  margin: 0px;\n}\n\ncanvas {\n  width: 100%;\n
 
 
 /***/ }),
-/* 14 */
+/* 11 */
 /***/ (function(module, exports) {
 
 /*
@@ -47018,7 +46562,7 @@ module.exports = function() {
 
 
 /***/ }),
-/* 15 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -47460,7 +47004,7 @@ module.exports = mat2;
 
 
 /***/ }),
-/* 16 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -47935,7 +47479,7 @@ module.exports = mat2d;
 
 
 /***/ }),
-/* 17 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -50077,7 +49621,7 @@ module.exports = mat4;
 
 
 /***/ }),
-/* 18 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -50683,7 +50227,7 @@ module.exports = quat;
 
 
 /***/ }),
-/* 19 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
@@ -51276,7 +50820,7 @@ module.exports = vec2;
 
 
 /***/ }),
-/* 20 */
+/* 17 */
 /***/ (function(module, exports) {
 
 /*
@@ -51525,6 +51069,240 @@ function updateLink(linkElement, obj) {
 	if(oldSrc)
 		URL.revokeObjectURL(oldSrc);
 }
+
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var THREE = __webpack_require__(2);
+var webvr_viewport_1 = __webpack_require__(9);
+var webvr_viewport_effect_1 = __webpack_require__(8);
+__webpack_require__(7);
+var cubeImageUrl = __webpack_require__(6);
+var HelloThreeSample = (function () {
+    function HelloThreeSample() {
+        var _this = this;
+        // WebVRViewport used for controlling the view and entering VR
+        this._viewport = new webvr_viewport_1.WebVRViewport({});
+        // Three.js Objects
+        this._scene = new THREE.Scene();
+        this._renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            canvas: this._viewport.canvasElement,
+        });
+        this._renderer.setClearColor('#000000');
+        // This effect adapts the WebVRViewport output to control a Three.js Camera
+        this._effect = new webvr_viewport_effect_1.default(this._renderer);
+        // Set initial Size and listen for changes
+        this.resize({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            fov: 60,
+            aspect: window.innerWidth / window.innerHeight,
+            pixelRatio: window.devicePixelRatio,
+        });
+        this._viewport.addEventListener('resize', this.resize.bind(this));
+        // Overlay UI hooks
+        document.querySelector('#canvas-container').appendChild(this._viewport.canvasElement);
+        var enterFullscreenButton = document.querySelector('#enter-fullscreen-button');
+        enterFullscreenButton.addEventListener('click', function () {
+            _this._viewport.enterFullscreen();
+        });
+        var enterVRButton = document.querySelector('#enter-vr-button');
+        enterVRButton.addEventListener('click', function () {
+            _this._viewport.enterVR();
+        });
+        this._viewport.addEventListener('vrdisplayactivate', function () {
+            enterVRButton.classList.remove('hidden');
+        });
+    }
+    HelloThreeSample.prototype.load = function () {
+        var loader = new THREE.TextureLoader();
+        // Floating WebVR logo
+        var cubeFaceGeo = new THREE.PlaneGeometry(0.4, 0.4);
+        var cubeFaceMat = new THREE.MeshBasicMaterial({ map: loader.load('./' + cubeImageUrl) });
+        this._cubeFace = new THREE.Mesh(cubeFaceGeo, cubeFaceMat);
+        this._cubeFace.position.setZ(-1);
+        this._scene.add(this._cubeFace);
+        // Kick off rendering
+        this._viewport.addEventListener('frame', this.render.bind(this));
+    };
+    HelloThreeSample.prototype.resize = function (params) {
+        this._effect.resize(params);
+    };
+    HelloThreeSample.prototype.render = function (timestamp) {
+        // Animate the z location of the quad based on the current frame timestamp
+        var oscillationSpeed = Math.PI / 2;
+        var z = -1 + Math.cos((oscillationSpeed * timestamp) / 1000);
+        this._cubeFace.position.set(0, 0, z - 1);
+        this._effect.render(this._scene, this._viewport);
+    };
+    return HelloThreeSample;
+}());
+document.addEventListener('DOMContentLoaded', function () {
+    // Stash on global for better debugging
+    window.sample = new HelloThreeSample();
+    // Kick off loading and rendering
+    window.sample.load();
+});
+
+
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// This is heavily influenced by the OVRUI controls for ReactVR
+// https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/MousePanControls.js
+Object.defineProperty(exports, "__esModule", { value: true });
+var gl_matrix_1 = __webpack_require__(1);
+var CameraControllerMouse = (function () {
+    function CameraControllerMouse(viewMatrix) {
+        this._yUnit = gl_matrix_1.vec3.fromValues(0, 1, 0);
+        this._width = 0;
+        this._height = 0;
+        this._fov = 0;
+        this._yaw = 0;
+        this._pitch = 0;
+        this._dragging = false;
+        this._lastX = 0;
+        this._lastY = 0;
+        this._mouseDownHandler = this._onMouseDown.bind(this);
+        this._mouseUpHandler = this._onMouseUp.bind(this);
+        this._mouseMoveHandler = this._onMouseMove.bind(this);
+        this._aspect = 1;
+        this._viewMatrix = viewMatrix;
+    }
+    CameraControllerMouse.prototype.connect = function (target) {
+        this._target = target || window;
+        this._target.addEventListener('mousedown', this._mouseDownHandler);
+        this._target.addEventListener('mousemove', this._mouseMoveHandler);
+        this._target.addEventListener('mouseup', this._mouseUpHandler);
+    };
+    CameraControllerMouse.prototype.disconnect = function () {
+        this._target.removeEventListener('mousedown', this._mouseDownHandler);
+        this._target.removeEventListener('mousemove', this._mouseMoveHandler);
+        this._target.removeEventListener('mouseup', this._mouseUpHandler);
+    };
+    CameraControllerMouse.prototype.update = function () {
+        gl_matrix_1.mat4.fromRotation(this._viewMatrix, this._yaw, this._yUnit);
+        gl_matrix_1.mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch);
+    };
+    CameraControllerMouse.prototype.resize = function (width, height, fov, aspect) {
+        this._width = width;
+        this._height = height;
+        this._fov = fov;
+        this._aspect = aspect;
+    };
+    CameraControllerMouse.prototype._onMouseDown = function (e) {
+        this._dragging = true;
+        this._lastX = e.screenX;
+        this._lastY = e.screenY;
+    };
+    CameraControllerMouse.prototype._onMouseUp = function () {
+        this._dragging = false;
+    };
+    CameraControllerMouse.prototype._onMouseMove = function (e) {
+        if (!this._dragging) {
+            return;
+        }
+        var deltaX = e.screenX - this._lastX;
+        var deltaY = e.screenY - this._lastY;
+        this._yaw += (deltaX / this._width) * this._fov * this._aspect * (Math.PI / 180);
+        this._pitch += deltaY / (this._height * this._fov * (Math.PI / 180));
+        this._pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this._pitch));
+        this._lastX = e.screenX;
+        this._lastY = e.screenY;
+    };
+    return CameraControllerMouse;
+}());
+exports.default = CameraControllerMouse;
+
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// This is heavily influenced by the OVRUI controls for ReactVR
+// https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/DeviceOrientationControls.js
+Object.defineProperty(exports, "__esModule", { value: true });
+var gl_matrix_1 = __webpack_require__(1);
+function toRadian(a) {
+    return (a || 0) * Math.PI / 180;
+}
+var CameraControllerOrientation = (function () {
+    function CameraControllerOrientation(cameraMatrix) {
+        this._cameraRotationQuat = gl_matrix_1.quat.create();
+        this._initialRotationQuat = gl_matrix_1.quat.create();
+        this._screenQuat = gl_matrix_1.quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+        this._yUnit = gl_matrix_1.vec3.fromValues(0, 1, 0);
+        this._zUnit = gl_matrix_1.vec3.fromValues(0, 0, 1);
+        this._deviceOrientation = {};
+        this._orientationChangeHandler = this._onOrientationChange.bind(this);
+        this._deviceOrientationHandler = this._onDeviceOrientation.bind(this);
+        this._screenOrientation = 0;
+        this._cameraMatrix = cameraMatrix;
+    }
+    CameraControllerOrientation.prototype.connect = function (target) {
+        this._target = target || window;
+        this._screenOrientation = this._getScreenOrientation();
+        window.addEventListener('orientationchange', this._orientationChangeHandler);
+        window.addEventListener('deviceorientation', this._deviceOrientationHandler);
+    };
+    CameraControllerOrientation.prototype.disconnect = function () {
+        window.removeEventListener('orientationchange', this._orientationChangeHandler);
+        window.removeEventListener('deviceorientation', this._deviceOrientationHandler);
+    };
+    CameraControllerOrientation.prototype.update = function () {
+        var alpha = this._deviceOrientation.alpha || 0;
+        var beta = this._deviceOrientation.beta || 0;
+        var gamma = this._deviceOrientation.gamma || 0;
+        var orient = this._screenOrientation;
+        gl_matrix_1.quat.identity(this._cameraRotationQuat);
+        gl_matrix_1.quat.rotateY(this._cameraRotationQuat, this._cameraRotationQuat, alpha);
+        gl_matrix_1.quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
+        gl_matrix_1.quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
+        if (this._initialAlpha !== undefined) {
+            gl_matrix_1.quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
+            gl_matrix_1.quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
+        }
+        gl_matrix_1.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._screenQuat);
+        gl_matrix_1.quat.setAxisAngle(this._initialRotationQuat, this._zUnit, -orient);
+        gl_matrix_1.quat.multiply(this._cameraRotationQuat, this._cameraRotationQuat, this._initialRotationQuat);
+        gl_matrix_1.mat4.fromQuat(this._cameraMatrix, this._cameraRotationQuat);
+    };
+    CameraControllerOrientation.prototype.resize = function (width, height, fov, aspect) {
+        // Nothing to do
+    };
+    CameraControllerOrientation.prototype._onOrientationChange = function () {
+        this._screenOrientation = this._getScreenOrientation();
+    };
+    CameraControllerOrientation.prototype._onDeviceOrientation = function (e) {
+        var alpha = toRadian(e.alpha);
+        var beta = toRadian(e.beta);
+        var gamma = toRadian(e.gamma);
+        if (this._initialAlpha === undefined) {
+            this._initialAlpha = alpha - this._getScreenOrientation();
+        }
+        this._deviceOrientation.alpha = alpha;
+        this._deviceOrientation.beta = beta;
+        this._deviceOrientation.gamma = gamma;
+    };
+    CameraControllerOrientation.prototype._getScreenOrientation = function () {
+        var orientation = screen.orientation || screen.mozOrientation || screen.msOrientation || {};
+        var angle = orientation.angle || window.orientation || 0;
+        return toRadian(angle);
+    };
+    return CameraControllerOrientation;
+}());
+exports.default = CameraControllerOrientation;
 
 
 /***/ })

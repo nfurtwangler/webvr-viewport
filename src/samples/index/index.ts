@@ -1,3 +1,3 @@
-import './samples.css';
+import './index.css';
 
 console.log('LOADING SAMPLES...');

@@ -1,26 +1,30 @@
 // This is heavily influenced by the OVRUI controls for ReactVR
 // https://github.com/facebook/react-vr/blob/master/OVRUI/src/Control/DeviceOrientationControls.js
 
-import { glMatrix, mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3 } from 'gl-matrix';
+
+function toRadian(a: number|null): number {
+  return (a || 0) * Math.PI / 180;
+}
 
 class CameraControllerOrientation {
-  constructor(cameraMatrix) {
+  private _cameraMatrix: mat4;
+  private _cameraRotationQuat = quat.create();
+  private _initialRotationQuat = quat.create();
+  private _screenQuat = quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
+  private _yUnit = vec3.fromValues(0, 1, 0);
+  private _zUnit = vec3.fromValues(0, 0, 1);
+  private _initialAlpha?: number;
+  private _deviceOrientation: {alpha?: number; beta?: number; gamma?: number } = {};
+  private _orientationChangeHandler = this._onOrientationChange.bind(this);
+  private _deviceOrientationHandler = this._onDeviceOrientation.bind(this);
+  private _target: HTMLElement | Window;
+  private _screenOrientation = 0;
+  constructor(cameraMatrix: mat4) {
     this._cameraMatrix = cameraMatrix;
-    this._cameraRotationQuat = quat.create();
-    this._initialRotationQuat = quat.create();
-
-    // -Pi/2 rotation around the X-axis
-    this._screenQuat = quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
-    this._yUnit = vec3.fromValues(0, 1, 0);
-    this._zUnit = vec3.fromValues(0, 0, 1);
-
-    this._initialAlpha = null;
-    this._deviceOrientation = {};
-    this._orientationChangeHandler = this._onOrientationChange.bind(this);
-    this._deviceOrientationHandler = this._onDeviceOrientation.bind(this);
   }
 
-  connect(target) {
+  connect(target: HTMLElement|Window): void {
     this._target = target || window;
     this._screenOrientation = this._getScreenOrientation();
     window.addEventListener('orientationchange', this._orientationChangeHandler);
@@ -44,7 +48,7 @@ class CameraControllerOrientation {
     quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
     quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
 
-    if (this._initialAlpha !== null) {
+    if (this._initialAlpha !== undefined) {
       quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
       quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
     }
@@ -56,7 +60,7 @@ class CameraControllerOrientation {
     mat4.fromQuat(this._cameraMatrix, this._cameraRotationQuat);
   }
 
-  resize() {
+  resize(width: number, height: number, fov: number, aspect: number): void {
     // Nothing to do
   }
 
@@ -64,11 +68,11 @@ class CameraControllerOrientation {
     this._screenOrientation = this._getScreenOrientation();
   }
 
-  _onDeviceOrientation(e) {
-    const alpha = glMatrix.toRadian(e.alpha);
-    const beta = glMatrix.toRadian(e.beta);
-    const gamma = glMatrix.toRadian(e.gamma);
-    if (this._initialAlpha === null) {
+  _onDeviceOrientation(e: DeviceOrientationEvent) {
+    const alpha = toRadian(e.alpha);
+    const beta = toRadian(e.beta);
+    const gamma = toRadian(e.gamma);
+    if (this._initialAlpha === undefined) {
       this._initialAlpha = alpha - this._getScreenOrientation();
     }
     this._deviceOrientation.alpha = alpha;
@@ -76,10 +80,10 @@ class CameraControllerOrientation {
     this._deviceOrientation.gamma = gamma;
   }
 
-  _getScreenOrientation() {
-    const orientation = screen.orientation || screen.mozOrientation || screen.msOrientation || {};
+  _getScreenOrientation(): number {
+    const orientation = (screen as any).orientation || (screen as any).mozOrientation || screen.msOrientation || {};
     const angle = orientation.angle || window.orientation || 0;
-    return glMatrix.toRadian(angle);
+    return toRadian(angle);
   }
 }
 

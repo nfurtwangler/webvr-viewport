@@ -2,13 +2,17 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = [
   {
-    entry: './src/webvr-viewport/webvr-viewport.js',
+    entry: './webvr-viewport.ts',
+    context: __dirname + '/src/webvr-viewport/',
     output: {
       path: __dirname  + '/bin/webvr-viewport/',
       filename: 'webvr-viewport.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     devtool: 'source-map',
     devServer: {
       publicPath: '/bin/'
@@ -16,21 +20,25 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
-        }
+          loaders: ['ts-loader'],
+        },
       ],
     },
   },
   {
-    entry: './src/webvr-viewport-three/webvr-viewport-effect.js',
+    entry: './webvr-viewport-effect.ts',
+    context: __dirname + '/src/webvr-viewport-three/',
     output: {
       path: __dirname  + '/bin/webvr-viewport-three/',
       filename: 'webvr-viewport-effect.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     devtool: 'source-map',
     devServer: {
       publicPath: '/bin/'
@@ -38,23 +46,27 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
-        }
+          loaders: ['ts-loader'],
+        },
       ],
     },
   },
   {
-    entry: './src/samples/samples.js',
+    entry: './index.ts',
+    context: __dirname + '/src/samples/index',
     output: {
-      path: __dirname  + '/bin/samples/',
-      filename: 'samples.js',
+      path: __dirname  + '/bin/samples/index',
+      filename: 'index.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     plugins: [new HtmlWebpackPlugin({
-      template: './src/samples/samples.template.ejs',
+      template: './index.template.ejs',
       inject: 'head'
     })],
     devtool: 'source-map',
@@ -64,9 +76,9 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
+          loaders: ['ts-loader'],
         },
         {
           test: /\.css$/,
@@ -76,15 +88,19 @@ module.exports = [
     },
   },
   {
-    entry: './src/samples/hello-world/hello-world.js',
+    entry: './hello-world.ts',
+    context: __dirname + '/src/samples/hello-world/',
     output: {
       path: __dirname + '/bin/samples/hello-world/',
       filename: 'hello-world.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     plugins: [new HtmlWebpackPlugin({
-      template: './src/samples/hello-world/hello-world.template.ejs',
+      template: './hello-world.template.ejs',
       inject: 'head'
     })],
     devtool: 'source-map',
@@ -94,9 +110,9 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
+          loaders: ['ts-loader'],
         },
         {
           test: /\.css$/,
@@ -110,15 +126,19 @@ module.exports = [
     },
   },
   {
-    entry: './src/samples/hello-three/hello-three.js',
+    entry: './hello-three.ts',
+    context: __dirname + '/src/samples/hello-three/',
     output: {
       path: __dirname + '/bin/samples/hello-three/',
       filename: 'hello-three.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     plugins: [new HtmlWebpackPlugin({
-      template: './src/samples/hello-three/hello-three.template.ejs',
+      template: './hello-three.template.ejs',
       inject: 'head'
     })],
     devtool: 'source-map',
@@ -128,9 +148,9 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
+          loaders: ['ts-loader'],
         },
         {
           test: /\.css$/,
@@ -144,15 +164,19 @@ module.exports = [
     },
   },
   {
-    entry: './src/samples/input/input.js',
+    entry: './input.ts',
+    context: __dirname + '/src/samples/input',
     output: {
       path: __dirname + '/bin/samples/input/',
       filename: 'input.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
+    resolve: {
+      extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
+    },
     plugins: [new HtmlWebpackPlugin({
-      template: './src/samples/input/input.template.ejs',
+      template: './input.template.ejs',
       inject: 'head'
     })],
     devtool: 'source-map',
@@ -162,9 +186,9 @@ module.exports = [
     module: {
       loaders: [
         {
-          test: /\.js$/,
+          test: /\.tsx?$/,
           exclude: /node_modules/,
-          loaders: ['babel-loader', 'eslint-loader'],
+          loaders: ['ts-loader'],
         },
         {
           test: /\.css$/,

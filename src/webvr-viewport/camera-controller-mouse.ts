@@ -4,23 +4,26 @@
 import { mat4, vec3 } from 'gl-matrix';
 
 class CameraControllerMouse {
-  constructor(viewMatrix) {
+  private _yUnit = vec3.fromValues(0, 1, 0);
+  private _width = 0;
+  private _height = 0;
+  private _fov = 0;
+  private _yaw = 0;
+  private _pitch = 0;
+  private _dragging = false;
+  private _lastX = 0;
+  private _lastY = 0;
+  private _mouseDownHandler = this._onMouseDown.bind(this);
+  private _mouseUpHandler = this._onMouseUp.bind(this);
+  private _mouseMoveHandler = this._onMouseMove.bind(this);
+  private _viewMatrix: mat4;
+  private _target: HTMLElement|Window;
+  private _aspect = 1;
+  constructor(viewMatrix: mat4) {
     this._viewMatrix = viewMatrix;
-    this._yUnit = vec3.fromValues(0, 1, 0);
-    this._width = 0;
-    this._height = 0;
-    this._fov = 0;
-    this._yaw = 0;
-    this._pitch = 0;
-    this._dragging = false;
-    this._lastX = 0;
-    this._lastY = 0;
-    this._mouseDownHandler = this._onMouseDown.bind(this);
-    this._mouseUpHandler = this._onMouseUp.bind(this);
-    this._mouseMoveHandler = this._onMouseMove.bind(this);
   }
 
-  connect(target) {
+  connect(target: HTMLElement|Window): void {
     this._target = target || window;
     this._target.addEventListener('mousedown', this._mouseDownHandler);
     this._target.addEventListener('mousemove', this._mouseMoveHandler);
@@ -38,14 +41,14 @@ class CameraControllerMouse {
     mat4.rotateX(this._viewMatrix, this._viewMatrix, this._pitch);
   }
 
-  resize(width, height, fov, aspect) {
+  resize(width: number, height: number, fov: number, aspect: number): void {
     this._width = width;
     this._height = height;
     this._fov = fov;
     this._aspect = aspect;
   }
 
-  _onMouseDown(e) {
+  _onMouseDown(e: MouseEvent) {
     this._dragging = true;
     this._lastX = e.screenX;
     this._lastY = e.screenY;
@@ -55,7 +58,7 @@ class CameraControllerMouse {
     this._dragging = false;
   }
 
-  _onMouseMove(e) {
+  _onMouseMove(e: MouseEvent) {
     if (!this._dragging) {
       return;
     }

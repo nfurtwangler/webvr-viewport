@@ -1,8 +1,9 @@
-import WebVRViewport from '../../webvr-viewport/webvr-viewport';
-
-import cubeImageUrl from './assets/cube-sea.png';
+import { WebVRViewport } from '../../webvr-viewport/webvr-viewport';
 
 import './hello-world.css';
+
+declare var require: (string) => any;
+const cubeImageUrl = require('./assets/cube-sea.png');
 
 let viewport;       // The WebVRViewport used to manage the view and projection matrices
 let gl;             // The webgl context of the canvas element, used to render the scene
