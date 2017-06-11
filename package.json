@@ -21,6 +21,7 @@
   "homepage": "https://github.com/nfurtwangler/webvr-viewport#readme",
   "devDependencies": {
     "@types/gl-matrix": "^2.2.34",
+    "@types/three": "^0.84.11",
     "babel-core": "^6.17.0",
     "babel-loader": "^6.2.5",
     "babel-preset-es2015": "^6.16.0",

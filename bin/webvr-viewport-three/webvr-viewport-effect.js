@@ -50308,9 +50308,7 @@ var WebVRViewportEffect = (function () {
         this._rightBounds = DEFAULT_RIGHT_BOUNDS;
         this._renderer = renderer;
         this._leftCamera.layers.enable(1);
-        this._leftCamera.viewID = 0;
         this._rightCamera.layers.enable(2);
-        this._rightCamera.viewID = 1;
     }
     WebVRViewportEffect.prototype.resize = function (params) {
         this._renderer.setSize(params.width, params.height);
@@ -50319,7 +50317,7 @@ var WebVRViewportEffect = (function () {
     WebVRViewportEffect.prototype.render = function (scene, viewport) {
         var preserveAutoUpdate = scene.autoUpdate;
         if (preserveAutoUpdate) {
-            scene.updateMatrixWorld();
+            scene.updateMatrixWorld(false);
             scene.autoUpdate = false;
         }
         this._leftEyeOffset.fromArray(viewport.leftEyeOffset);
@@ -50351,13 +50349,6 @@ var WebVRViewportEffect = (function () {
         this._leftCamera.projectionMatrix.elements = viewport.leftProjectionMatrix;
         // Prepare the scene backgrounds for each eye if ready
         var backupScene = scene.background;
-        // Only allow stereo background rendering if both backgrounds have been set
-        // otherwise the user will see the background in only one eye.
-        var isStereoBackgroundReady = !!scene.backgroundLeft && !!scene.backgroundRight;
-        // Swap in our left eye background if both backgrounds are ready
-        if (isStereoBackgroundReady) {
-            scene.background = scene.backgroundLeft;
-        }
         // Set up the left eye viewport and scissor
         this._renderer.setViewport(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
         this._renderer.setScissor(leftRect.x, leftRect.y, leftRect.width, leftRect.height);
@@ -50372,10 +50363,6 @@ var WebVRViewportEffect = (function () {
             this._rightCamera.quaternion.set(this._rightViewRotation[0], this._rightViewRotation[1], this._rightViewRotation[2], this._rightViewRotation[3]);
             this._rightCamera.translateOnAxis(this._rightEyeOffset, 1);
             this._rightCamera.projectionMatrix.elements = viewport.rightProjectionMatrix;
-            // Swap in our right eye background if both backgrounds are ready
-            if (isStereoBackgroundReady) {
-                scene.background = scene.backgroundRight;
-            }
             // Set up the right eye viewport and scissor then render the right eye
             this._renderer.setViewport(rightRect.x, rightRect.y, rightRect.width, rightRect.height);
             this._renderer.setScissor(rightRect.x, rightRect.y, rightRect.width, rightRect.height);

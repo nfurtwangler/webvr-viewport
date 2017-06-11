@@ -3,10 +3,9 @@
 
 import { mat4, quat, vec3 } from 'gl-matrix';
 
-function toRadian(a){
-  return a * Math.PI / 180;
+function toRadian(a: number|null): number {
+  return (a || 0) * Math.PI / 180;
 }
-
 
 class CameraControllerOrientation {
   private _cameraMatrix: mat4;
@@ -15,13 +14,13 @@ class CameraControllerOrientation {
   private _screenQuat = quat.fromValues(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5));
   private _yUnit = vec3.fromValues(0, 1, 0);
   private _zUnit = vec3.fromValues(0, 0, 1);
-  private _initialAlpha = null;
+  private _initialAlpha?: number;
   private _deviceOrientation: {alpha?: number; beta?: number; gamma?: number } = {};
   private _orientationChangeHandler = this._onOrientationChange.bind(this);
   private _deviceOrientationHandler = this._onDeviceOrientation.bind(this);
   private _target: HTMLElement | Window;
-  private _screenOrientation: number;
-  constructor(cameraMatrix) {
+  private _screenOrientation = 0;
+  constructor(cameraMatrix: mat4) {
     this._cameraMatrix = cameraMatrix;
   }
 
@@ -49,7 +48,7 @@ class CameraControllerOrientation {
     quat.rotateX(this._cameraRotationQuat, this._cameraRotationQuat, beta);
     quat.rotateZ(this._cameraRotationQuat, this._cameraRotationQuat, -gamma);
 
-    if (this._initialAlpha !== null) {
+    if (this._initialAlpha !== undefined) {
       quat.setAxisAngle(this._initialRotationQuat, this._yUnit, -this._initialAlpha);
       quat.multiply(this._cameraRotationQuat, this._initialRotationQuat, this._cameraRotationQuat);
     }
@@ -69,11 +68,11 @@ class CameraControllerOrientation {
     this._screenOrientation = this._getScreenOrientation();
   }
 
-  _onDeviceOrientation(e) {
+  _onDeviceOrientation(e: DeviceOrientationEvent) {
     const alpha = toRadian(e.alpha);
     const beta = toRadian(e.beta);
     const gamma = toRadian(e.gamma);
-    if (this._initialAlpha === null) {
+    if (this._initialAlpha === undefined) {
       this._initialAlpha = alpha - this._getScreenOrientation();
     }
     this._deviceOrientation.alpha = alpha;

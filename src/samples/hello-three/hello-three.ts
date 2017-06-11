@@ -1,19 +1,26 @@
 import * as THREE from 'three';
-import WebVRViewport from '../../../bin/webvr-viewport/webvr-viewport';
-import WebVRViewportEffect from '../../../bin/webvr-viewport-three/webvr-viewport-effect';
-import cubeImageUrl from './assets/cube-sea.png';
+import { WebVRViewport, ResizeParams } from '../../webvr-viewport/webvr-viewport';
+import WebVRViewportEffect from '../../webvr-viewport-three/webvr-viewport-effect';
 
 import './hello-three.css';
 
-class HelloThreeSample {
-  constructor() {
-    // WebVRViewport used for controlling the view and entering VR
-    this._viewport = new WebVRViewport({
-      // Default options
-    });
+declare var require: (string) => any;
+const cubeImageUrl = require('./assets/cube-sea.png');
 
-    // Three.js Objects
-    this._scene = new THREE.Scene();
+class HelloThreeSample {
+  // WebVRViewport used for controlling the view and entering VR
+  private _viewport = new WebVRViewport({
+    // Default options
+  });
+
+  // Three.js Objects
+  private _scene = new THREE.Scene();
+  private _renderer: THREE.WebGLRenderer;
+  private _effect: WebVRViewportEffect;
+  private _cubeFace: THREE.Mesh;
+
+  constructor() {
+
     this._renderer = new THREE.WebGLRenderer({
       antialias: true,
       canvas: this._viewport.canvasElement,
@@ -63,7 +70,7 @@ class HelloThreeSample {
     this._viewport.addEventListener('frame', this.render.bind(this));
   }
 
-  resize(params) {
+  resize(params: ResizeParams) {
     this._effect.resize(params);
   }
 
@@ -79,8 +86,8 @@ class HelloThreeSample {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Stash on global for better debugging
-  window.sample = new HelloThreeSample();
+  (window as any).sample = new HelloThreeSample();
 
   // Kick off loading and rendering
-  window.sample.load();
+  (window as any).sample.load();
 });

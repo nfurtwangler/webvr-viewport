@@ -48,7 +48,7 @@ class CameraControllerMouse {
     this._aspect = aspect;
   }
 
-  _onMouseDown(e) {
+  _onMouseDown(e: MouseEvent) {
     this._dragging = true;
     this._lastX = e.screenX;
     this._lastY = e.screenY;
@@ -58,7 +58,7 @@ class CameraControllerMouse {
     this._dragging = false;
   }
 
-  _onMouseMove(e) {
+  _onMouseMove(e: MouseEvent) {
     if (!this._dragging) {
       return;
     }

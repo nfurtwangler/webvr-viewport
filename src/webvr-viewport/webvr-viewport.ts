@@ -40,9 +40,26 @@ interface Navigator {
   getVRDisplays(): Promise<VRDisplay>;
 }
 
-class WebVRViewport {
+export type EventHandler = (arg: any) => void;
+
+export interface ResizeParams {
+  width: number,
+  height: number,
+  fov: number,
+  aspect: number,
+  pixelRatio: number,
+}
+
+export interface WebVRViewportOptions {
+  width?: number,
+  height?: number,
+  pixelRatio?: number,
+  parentElement?: HTMLElement,
+}
+
+export class WebVRViewport {
   private _canvasElement: HTMLCanvasElement;
-  private _eventListeners = {};
+  private _eventListeners: {[key: string]: EventHandler[]} = {};
   private _animationFrameHandler = this._onAnimationFrame.bind(this);
   private _monoProjectionMatrix = mat4.create();
   private _monoCameraMatrix = mat4.create();
@@ -59,7 +76,7 @@ class WebVRViewport {
   private _width: number;
   private _height: number;
 
-  constructor(options) {
+  constructor(options: WebVRViewportOptions) {
     this._canvasElement = document.createElement('canvas');
     this._monoCameraController = this._isDeviceOrientationSupported ?
                                  new CameraControllerOrientation(this._monoCameraMatrix) :
@@ -114,30 +131,30 @@ class WebVRViewport {
   }
 
   get leftProjectionMatrix() {
-    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix;
+    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get rightProjectionMatrix() {
-    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix;
+    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get leftViewMatrix() {
-    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix;
+    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get rightViewMatrix() {
-    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix;
+    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get leftEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : [0, 0, 0];
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : new Float32Array([0, 0, 0]);
   }
 
   get rightEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : [0, 0, 0];
+    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : new Float32Array([0, 0, 0]);
   }
 
-  addEventListener(key, callback) {
+  addEventListener(key: string, callback: EventHandler) {
     let listeners = this._eventListeners[key];
     let isFirst = false;
     if (!listeners) {
@@ -177,12 +194,13 @@ class WebVRViewport {
       fullscreenMethod = 'msRequestFullscreen';
     }
 
-    if (this.canvasElement[fullscreenMethod]) {
-      this.canvasElement[fullscreenMethod]();
+    const canvasElement = this.canvasElement as any;
+    if (fullscreenMethod && canvasElement[fullscreenMethod]) {
+      canvasElement[fullscreenMethod]();
     }
   }
 
-  resize(newWidth, newHeight) {
+  resize(newWidth: number, newHeight: number) {
     let width = newWidth;
     let height = newHeight;
     if (!this._fixedPixelRatio) {
@@ -230,7 +248,7 @@ class WebVRViewport {
 
   _addResizeHandler() {
     let last = 0;
-    let timer = null;
+    let timer: number|null = null;
     const delay = 100;
 
     // Throttled window resize handler
@@ -266,7 +284,7 @@ class WebVRViewport {
 
   _initVrDisplay() {
     if ((navigator as any).getVRDisplays) {
-      (navigator as any).getVRDisplays().then((displays) => {
+      (navigator as any).getVRDisplays().then((displays: VRDisplay[]) => {
         if (displays.length > 0) {
           // We reuse this every frame to avoid generating garbage
           this._frameData = new VRFrameData(); // eslint-disable-line no-undef
@@ -287,7 +305,7 @@ class WebVRViewport {
     }
   }
 
-  _onFirstEventListener(key) {
+  _onFirstEventListener(key: string) {
     if (key === 'frame') {
       this._requestAnimationFrame();
     }
@@ -301,7 +319,7 @@ class WebVRViewport {
     }
   }
 
-  _onAnimationFrame(timestamp) {
+  _onAnimationFrame(timestamp: number) {
     this._requestAnimationFrame();
 
     if (this.isPresenting !== this._wasPresenting) {
@@ -369,5 +387,3 @@ class WebVRViewport {
     return quadrant === 1 || quadrant === 3;
   }
 }
-
-export default WebVRViewport;
