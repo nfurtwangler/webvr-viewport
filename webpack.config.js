@@ -164,11 +164,11 @@ module.exports = [
     },
   },
   {
-    entry: './input.ts',
-    context: __dirname + '/src/samples/input',
+    entry: './webrtc.ts',
+    context: __dirname + '/src/samples/webrtc',
     output: {
-      path: __dirname + '/bin/samples/input/',
-      filename: 'input.js',
+      path: __dirname + '/bin/samples/webrtc/',
+      filename: 'webrtc.js',
       sourceMapFilename: '[file].map',
       devtoolModuleFilenameTemplate: 'webpack:///[resource-path]?[loaders]',
     },
@@ -176,7 +176,7 @@ module.exports = [
       extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
     },
     plugins: [new HtmlWebpackPlugin({
-      template: './input.template.ejs',
+      template: './webrtc.template.ejs',
       inject: 'head'
     })],
     devtool: 'source-map',
