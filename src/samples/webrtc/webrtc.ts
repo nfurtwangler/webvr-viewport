@@ -75,7 +75,7 @@ class WebRTCSample {
       enterVRButton.classList.remove('hidden');
     });
 
-    this._serverConnection = new WebSocket('ws://' + window.location.hostname + ':3000');
+    this._serverConnection = new WebSocket('wss://' + window.location.hostname);
     this._serverConnection.onmessage = this.onServerMessage.bind(this);
   }
 
