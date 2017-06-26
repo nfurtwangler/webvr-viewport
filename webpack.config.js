@@ -1,4 +1,5 @@
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = [
   {
@@ -175,10 +176,16 @@ module.exports = [
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.css', '.png', '.jpg'],
     },
-    plugins: [new HtmlWebpackPlugin({
-      template: './webrtc.template.ejs',
-      inject: 'head'
-    })],
+    plugins: [
+      new HtmlWebpackPlugin({
+        template: './webrtc.template.ejs',
+        inject: 'head'
+      }),
+      new CopyWebpackPlugin([{
+        from: './static_assets',
+        to: './assets'
+      }])
+    ],
     devtool: 'source-map',
     devServer: {
       publicPath: '/bin/'

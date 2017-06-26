@@ -1,6 +1,10 @@
 import * as THREE from 'three';
+
 import { WebVRViewport, ResizeParams } from '../../webvr-viewport/webvr-viewport';
 import WebVRViewportEffect from '../../webvr-viewport-three/webvr-viewport-effect';
+
+import * as GLTF2Loader from '../../webvr-viewport-three/gltf2-loader'
+GLTF2Loader.call(this, THREE);
 
 import './webrtc.css';
 
@@ -22,7 +26,8 @@ class WebRTCSample {
   private _localStream: MediaStream;
   private _remoteVideoElement: HTMLVideoElement;
   private _remoteStream: MediaStream;
-
+  private _localHead: THREE.Object3D;
+  private _remoteHead: THREE.Object3D;
   private _serverConnection: WebSocket;
   private _peerConnection: RTCPeerConnection;
   private _uuid: string;
@@ -83,17 +88,16 @@ class WebRTCSample {
     const loader = new THREE.TextureLoader();
 
     // Local webcam
+    const videoGeo = new THREE.PlaneGeometry(0.265, 0.26);
     this._localVideoElement = document.createElement('video');
     var videoLocalTexture = new THREE.VideoTexture(this._localVideoElement);
     videoLocalTexture.minFilter = THREE.LinearFilter;
     videoLocalTexture.magFilter = THREE.LinearFilter;
     videoLocalTexture.format = THREE.RGBFormat;
-    const videoLocalGeo = new THREE.PlaneGeometry(0.4, 0.4);
     const videoLocalMat = new THREE.MeshBasicMaterial({ map: videoLocalTexture });
-    const videoLocalMesh = new THREE.Mesh(videoLocalGeo, videoLocalMat);
-    videoLocalMesh.position.set(-0.2, 0, -1);
-    this._scene.add(videoLocalMesh);
-     navigator.getUserMedia({ video: true}, function (stream) {
+    const videoLocalMesh = new THREE.Mesh(videoGeo, videoLocalMat);
+
+    navigator.getUserMedia({ video: true}, function (stream) {
       console.log("Local stream added.");
       this._localStream = stream;
       this._localVideoElement.srcObject = this._localStream;
@@ -107,11 +111,33 @@ class WebRTCSample {
     videoRemoteTexture.minFilter = THREE.LinearFilter;
     videoRemoteTexture.magFilter = THREE.LinearFilter;
     videoRemoteTexture.format = THREE.RGBFormat;
-    const videoRemoteGeo = new THREE.PlaneGeometry(0.4, 0.4);
     const videoRemoteMat = new THREE.MeshBasicMaterial({ map: videoRemoteTexture });
-    const videoRemoteMesh = new THREE.Mesh(videoRemoteGeo, videoRemoteMat);
-    videoRemoteMesh.position.set(0.2, 0, -1);
-    this._scene.add(videoRemoteMesh);
+    const videoRemoteMesh = new THREE.Mesh(videoGeo, videoRemoteMat);
+
+    // local gltf avatar
+    const avatarGltf = './assets/RiggedFigure.gltf';
+    const gltfLoader = new (THREE as any).GLTF2Loader();
+    const avatarBodyRotation = Math.PI / 6;
+    gltfLoader.load(avatarGltf, (gltf) => {
+      gltf.scene.position.set(-0.5, -1.5, -1.5);
+      gltf.scene.rotation.set(0, avatarBodyRotation, 0);
+      this._scene.add(gltf.scene);
+      videoLocalMesh.position.set(0, 0.194, 0.131);
+
+      this._localHead = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0];
+      this._localHead.add(videoLocalMesh);
+    });
+
+    // remote gltf avatar
+    gltfLoader.load(avatarGltf, (gltf) => {
+      gltf.scene.position.set(0.5, -1.5, -1.5);
+      gltf.scene.rotation.set(0, -avatarBodyRotation, 0);
+      this._scene.add(gltf.scene);
+      videoRemoteMesh.position.set(0, 0.194, 0.131);
+
+      this._remoteHead = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[0];
+      this._remoteHead.add(videoRemoteMesh);
+    });
 
     // Equirect pano image for background
     const sphereGeo = new THREE.SphereGeometry(1000, 50, 50);
@@ -119,6 +145,13 @@ class WebRTCSample {
     sphereGeo.scale(-1, 1, 1);
     const sphere = new THREE.Mesh(sphereGeo, sphereMat);
     this._scene.add(sphere);
+
+    // Lighting
+    const ambient = new THREE.AmbientLight(0x666666);
+    this._scene.add(ambient);
+    const directionalLight = new THREE.DirectionalLight(0xdddddd);
+    directionalLight.position.set(-2, 2, 0).normalize();
+    this._scene.add(directionalLight);
 
     // Kick off rendering
     this._viewport.addEventListener('frame', this.render.bind(this));
@@ -129,6 +162,12 @@ class WebRTCSample {
   }
 
   render() {
+    if (this._localHead) {
+      const intialRotationX = Math.PI / 2.2;
+      const cameraRotation = this._effect.leftCamera.rotation;
+      this._localHead.rotation.set(intialRotationX + -cameraRotation.x, cameraRotation.y, 0);
+    }
+
     this._effect.render(this._scene, this._viewport);
   }
 

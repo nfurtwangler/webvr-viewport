@@ -116,4 +116,12 @@ export default class WebVRViewportEffect {
       scene.autoUpdate = true;
     }
   }
+
+  get leftCamera() {
+    return this._leftCamera;
+  }
+
+  get rightCamera() {
+    return this._rightCamera;
+  }
 }
