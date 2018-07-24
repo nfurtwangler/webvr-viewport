@@ -18,14 +18,12 @@ class CameraControllerOrientation {
   private _deviceOrientation: {alpha?: number; beta?: number; gamma?: number } = {};
   private _orientationChangeHandler = this._onOrientationChange.bind(this);
   private _deviceOrientationHandler = this._onDeviceOrientation.bind(this);
-  private _target: HTMLElement | Window;
   private _screenOrientation = 0;
   constructor(cameraMatrix: mat4) {
     this._cameraMatrix = cameraMatrix;
   }
 
   connect(target: HTMLElement|Window): void {
-    this._target = target || window;
     this._screenOrientation = this._getScreenOrientation();
     window.addEventListener('orientationchange', this._orientationChangeHandler);
     window.addEventListener('deviceorientation', this._deviceOrientationHandler);

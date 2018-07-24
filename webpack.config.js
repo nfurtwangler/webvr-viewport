@@ -3,6 +3,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = [
   {
+    mode: 'production',
     entry: './webvr-viewport.ts',
     context: __dirname + '/src/webvr-viewport/',
     output: {
@@ -19,16 +20,19 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
-        },
-      ],
-    },
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
+        }
+      ]
+    }
   },
   {
+    mode: 'production',
     entry: './webvr-viewport-effect.ts',
     context: __dirname + '/src/webvr-viewport-three/',
     output: {
@@ -45,16 +49,19 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
-        },
-      ],
-    },
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
+        }
+      ]
+    }
   },
   {
+    mode: 'production',
     entry: './index.ts',
     context: __dirname + '/src/samples/index',
     output: {
@@ -75,20 +82,23 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
         },
         {
           test: /\.css$/,
-          loaders: ['style-loader', 'css-loader'],
+          loader: ['style-loader', 'css-loader'],
         }
-      ],
-    },
+      ]
+    }
   },
   {
+    mode: 'production',
     entry: './hello-world.ts',
     context: __dirname + '/src/samples/hello-world/',
     output: {
@@ -109,24 +119,27 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
         },
         {
           test: /\.css$/,
-          loaders: ['style-loader', 'css-loader'],
+          loader: ['style-loader', 'css-loader'],
         },
         {
           test: /\.png$/,
-          loaders: ['file-loader'],
-        },
-      ],
-    },
+          loader: ['file-loader'],
+        }
+      ]
+    }
   },
   {
+    mode: 'production',
     entry: './hello-three.ts',
     context: __dirname + '/src/samples/hello-three/',
     output: {
@@ -147,24 +160,27 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
         },
         {
           test: /\.css$/,
-          loaders: ['style-loader', 'css-loader'],
+          loader: ['style-loader', 'css-loader'],
         },
         {
           test: /\.png$/,
-          loaders: ['file-loader'],
-        },
-      ],
+          loader: ['file-loader'],
+        }
+      ]
     },
   },
   {
+    mode: 'production',
     entry: './webrtc.ts',
     context: __dirname + '/src/samples/webrtc',
     output: {
@@ -191,21 +207,23 @@ module.exports = [
       publicPath: '/bin/'
     },
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.tsx?$/,
-          exclude: /node_modules/,
-          loaders: ['ts-loader'],
+          exclude: [
+            /node_modules/
+          ],
+          loader: 'ts-loader'
         },
         {
           test: /\.css$/,
-          loaders: ['style-loader', 'css-loader'],
+          loader: ['style-loader', 'css-loader'],
         },
         {
           test: /\.(jpg|png)$/,
-          loaders: ['file-loader'],
-        },
-      ],
+          loader: ['file-loader'],
+        }
+      ]
     },
   },
 ];

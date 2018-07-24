@@ -1,3 +1,4 @@
 node_modules
 bin
 project-lock.json
+.DS_Store

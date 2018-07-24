@@ -217,19 +217,18 @@ class WebRTCSample {
     this._peerConnection.addStream(this._localStream);
 
     if (isCaller) {
-      this._peerConnection.createOffer(
-        this.createdLocalDescription.bind(this),
-        () => {
-          console.log('Failed making local peer offer');
-        },
-        {
-          offerToReceiveVideo: 1
-        }
-      );
+      this._peerConnection.createOffer({
+        offerToReceiveVideo: 1
+      }).then((init: RTCSessionDescriptionInit) => {
+        this.createdLocalDescription(init);
+
+      }, (reason: any) => {
+        console.log('Failed to create offer');
+      });
     }
   }
 
-  createdLocalDescription(description) {
+  createdLocalDescription(description: RTCSessionDescriptionInit) {
     console.log('Created Description');
     this._peerConnection.setLocalDescription(description).then(() => {
       this._serverConnection.send(JSON.stringify({'sdp': this._peerConnection.localDescription, 'uuid': this._uuid}));

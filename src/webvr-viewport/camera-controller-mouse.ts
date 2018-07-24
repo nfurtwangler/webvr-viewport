@@ -17,7 +17,7 @@ class CameraControllerMouse {
   private _mouseUpHandler = this._onMouseUp.bind(this);
   private _mouseMoveHandler = this._onMouseMove.bind(this);
   private _viewMatrix: mat4;
-  private _target: HTMLElement|Window;
+  private _target?: HTMLElement|Window = undefined;
   private _aspect = 1;
   constructor(viewMatrix: mat4) {
     this._viewMatrix = viewMatrix;
@@ -31,9 +31,11 @@ class CameraControllerMouse {
   }
 
   disconnect() {
-    this._target.removeEventListener('mousedown', this._mouseDownHandler);
-    this._target.removeEventListener('mousemove', this._mouseMoveHandler);
-    this._target.removeEventListener('mouseup', this._mouseUpHandler);
+    if (this._target) {
+      this._target.removeEventListener('mousedown', this._mouseDownHandler);
+      this._target.removeEventListener('mousemove', this._mouseMoveHandler);
+      this._target.removeEventListener('mouseup', this._mouseUpHandler);
+    }
   }
 
   update() {

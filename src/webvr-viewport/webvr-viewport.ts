@@ -70,11 +70,10 @@ export class WebVRViewport {
   private _fixedPixelRatio = true;
   private _pixelRatio = 1;
   private _wasPresenting = false;
-  private _vrDisplay: VRDisplay;
-  private _frameData: VRFrameData;
-  private _resizeHandler: () => void;
-  private _width: number;
-  private _height: number;
+  private _vrDisplay?: VRDisplay = undefined;
+  private _frameData?: VRFrameData;
+  private _width: number = 0;
+  private _height: number = 0;
 
   constructor(options: WebVRViewportOptions) {
     this._canvasElement = document.createElement('canvas');
@@ -131,27 +130,27 @@ export class WebVRViewport {
   }
 
   get leftProjectionMatrix() {
-    return this.isPresenting ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix as Float32Array;
+    return (this.isPresenting && this._frameData) ? this._frameData.leftProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get rightProjectionMatrix() {
-    return this.isPresenting ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix as Float32Array;
+    return (this.isPresenting && this._frameData) ? this._frameData.rightProjectionMatrix : this._monoProjectionMatrix as Float32Array;
   }
 
   get leftViewMatrix() {
-    return this.isPresenting ? this._frameData.leftViewMatrix : this._monoViewMatrix as Float32Array;
+    return (this.isPresenting && this._frameData) ? this._frameData.leftViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get rightViewMatrix() {
-    return this.isPresenting ? this._frameData.rightViewMatrix : this._monoViewMatrix as Float32Array;
+    return (this.isPresenting && this._frameData) ? this._frameData.rightViewMatrix : this._monoViewMatrix as Float32Array;
   }
 
   get leftEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('left').offset : new Float32Array([0, 0, 0]);
+    return (this.isPresenting && this._vrDisplay) ? this._vrDisplay.getEyeParameters('left').offset : new Float32Array([0, 0, 0]);
   }
 
   get rightEyeOffset() {
-    return this.isPresenting ? this._vrDisplay.getEyeParameters('right').offset : new Float32Array([0, 0, 0]);
+    return (this.isPresenting && this._vrDisplay) ? this._vrDisplay.getEyeParameters('right').offset : new Float32Array([0, 0, 0]);
   }
 
   addEventListener(key: string, callback: EventHandler) {
@@ -218,7 +217,7 @@ export class WebVRViewport {
 
     let aspect = width / height;
 
-    if (this.isPresenting) {
+    if (this.isPresenting && this._vrDisplay) {
       const leftEye = this._vrDisplay.getEyeParameters('left');
       const rightEye = this._vrDisplay.getEyeParameters('right');
 
@@ -252,7 +251,7 @@ export class WebVRViewport {
     const delay = 100;
 
     // Throttled window resize handler
-    this._resizeHandler = () => {
+    let resizeHandler = () => {
       if (this.isPresenting) {
         return;
       }
@@ -279,7 +278,7 @@ export class WebVRViewport {
       }, delay);
     };
 
-    window.addEventListener('resize', this._resizeHandler);
+    window.addEventListener('resize', resizeHandler);
   }
 
   _initVrDisplay() {
@@ -287,7 +286,7 @@ export class WebVRViewport {
       (navigator as any).getVRDisplays().then((displays: VRDisplay[]) => {
         if (displays.length > 0) {
           // We reuse this every frame to avoid generating garbage
-          this._frameData = new VRFrameData(); // eslint-disable-line no-undef
+          this._frameData = new VRFrameData();
           this._vrDisplay = displays[0];
           this._emitEvent('vrdisplayactivate');
 
@@ -327,8 +326,8 @@ export class WebVRViewport {
       this.resize(this._width, this._height);
     }
 
-    if (this.isPresenting) {
-      this._vrDisplay.getFrameData(this._frameData);
+    if (this.isPresenting && this._vrDisplay && this._frameData) {
+      this._vrDisplay.getFrameData(this._frameData as VRFrameData);
     } else {
       // Update the mono camera and save the rotation quaternion
       this._monoCameraController.update();
@@ -337,7 +336,7 @@ export class WebVRViewport {
 
     this._emitEvent('frame', timestamp);
 
-    if (this.isPresenting) {
+    if (this.isPresenting && this._vrDisplay) {
       this._vrDisplay.submitFrame();
     }
   }

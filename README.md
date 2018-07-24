@@ -16,15 +16,10 @@ First, install dependencies:
 ```bash
 npm install
 ```
-There is a postinstall hook whicih will also run the build, producing output in /bin/.  You can run this manually with:
+There is a postinstall hook which will also run the build, producing output in /bin/.  You can run this manually with:
 ```bash
 npm run build
 ```
 To serve the samples locally at localhost:3000 run:
 ```bash
 npm run start
-```
-For iterative development, you can use the webpack devserver with:
-```bash
-npm run startdev
-```
